@@ -18,18 +18,16 @@
       --text:#333; 
       --snow:1;
       --tree-offset:80px;
-      --crown-gap:-10000px;  /* distanza stella ↔ riga 1 desktop */
+      --crown-gap:56px;  /* distanza stella ↔ riga 1 desktop */
       --star-top:-10px;  /* alza stella desktop */
       --ball:70px;       /* diametro palline */
       --gap:14px;
       --side-pad: clamp(0px, 3vw, 0px);
       
     }
-@media (max-width:600px){
-  :root{ --crown-gap:10px!important; --star-top:0px!important }
-}
-}
-
+        @media (max-width:600px){
+      :root{ --crown-gap:10px!important; --star-top:0px;!important }
+    }
     
     @media (max-width:600px){
     :root{
@@ -792,7 +790,7 @@
 }
 @media (max-width: 768px){
   .tree-top{
-    top: 10px !important;   /* ← REGOLA QUI LA DISTANZA */
+    top: 0px !important;   /* ← REGOLA QUI LA DISTANZA */
   }
 }
 /* Regola distanza tronco SOLO su mobile */
@@ -1003,23 +1001,11 @@ button,
   transform: scale(1.0);        /* riduce leggermente l’immagine dentro il cerchio */
   transform-origin: center center;
 }
-
 #freeNav, 
 #btnUnlockAll, 
 #btnRelock, 
 #btnTestDay {
     display: none !important;
-}
-
-    /* OVERRIDE: distanza stella ↔ prima fila (pallina 25) */
-#abTree .tree-row:first-of-type{
-  margin-top: 120px !important;   /* prova 40px, poi aumenta o riduci se serve */
-}
-
-    /* OVERRIDE: distanza della stella dall'albero */
-img.tree-top{
-  margin-bottom: 40px !important;   /* aumenta lo spazio tra stella e pallina 25 */
-  display:block;
 }
 
   </style>
@@ -2060,6 +2046,24 @@ document.addEventListener('keydown', (e) => {
 });
 
   
+function resetCardPhases() {
+  // fase 1 visibile
+  introSection.style.display = 'flex';
+
+  // nascondo fase 2 e 3
+  wordsSection.style.display = 'none';
+  examples.style.display = 'none';
+
+  // bottoni fase 2 e 3 riattivati
+  btnShowWords.style.display = 'inline-block';
+  btnShowExamples.style.display = 'inline-block';
+
+  // bottone "Torna indietro" nascosto
+  btnBackStep.style.display = 'none';
+
+  // rimetti margini / adattamento testo se serve
+  queueFit();
+}
   
   /* ===== NAVIGAZIONE CARD (page turn) ===== */
   function navigateToIndex(targetIndex){
@@ -2100,6 +2104,16 @@ document.addEventListener('keydown', (e) => {
   if (giftTimer){
     clearTimeout(giftTimer);
     giftTimer = null;
+    // aggiorniamo la card corrente
+currentCard = finalIndex;
+applyCardData();
+applyFinalCardRules();
+reserveTopSpace();
+queueFit();
+
+// fine animazione
+setTimeout(()=> { isBusy = false; }, 300);
+
   }
   closeGiftPrePopup();
 };
