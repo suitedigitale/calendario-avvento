@@ -25,9 +25,14 @@
       --side-pad: clamp(0px, 3vw, 0px);
       
     }
-        @media (max-width:600px){
-      :root{ --crown-gap:10px!important; --star-top:0px;!important }
-    }
+     @media (max-width:420px){
+  :root{
+    /* tieni comunque un po’ di spazio anche su telefoni piccoli */
+    --crown-gap:26px !important;
+    --star-top:4px !important;
+  }
+}
+
     
     @media (max-width:600px){
     :root{
