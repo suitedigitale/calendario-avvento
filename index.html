@@ -1,0 +1,2413 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ab.LAB – Albero di Natale (25)</title>
+  <link rel="preconnect" href="https://uploads3.fw360.it" crossorigin>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --teal:#08B5BB; 
+      --teal2:#16AFB8; 
+      --yellow:#F8CA29;
+      --bg:#ff6f6f; 
+      --text:#333; 
+      --snow:1;
+      --tree-offset:80px;
+      --crown-gap:56px;  /* distanza stella ↔ riga 1 desktop */
+      --star-top:-10px;  /* alza stella desktop */
+      --ball:70px;       /* diametro palline */
+      --gap:14px;
+      --side-pad: clamp(0px, 3vw, 0px);
+      
+    }
+        @media (max-width:600px){
+      :root{ --crown-gap:10px!important; --star-top:0px;!important }
+    }
+    
+    @media (max-width:600px){
+    :root{
+    --ball:50px;   /* più piccole solo su mobile */
+    --gap:6px;    /* stringe un po’ la distanza tra le palline */
+  }
+}
+
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      background:var(--bg);
+      font-family:'Segoe UI',system-ui,-apple-system,Arial,sans-serif;
+      color:var(--text);
+    }
+
+    /* ===== WRAP ===== */
+    #abTree{
+      padding:calc(24px + var(--tree-offset)) var(--side-pad) 70px;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:22px;
+      position:relative; /* 👈 AGGIUNTO per la neve alla base */
+    }
+    #abTree .brand{display:flex;align-items:center;gap:10px;opacity:.95;}
+    #abTree .brand img{height:38px;width:auto;display:block}
+    #abTree .subtitle{
+      font-weight:600;
+      color:#f5fbff;
+      font-size:14px;
+      text-shadow:0 1px 0 rgba(0,0,0,.15);
+      text-align:center;
+      margin:0 0 10px;
+    }
+
+    /* ===== ALBERO ===== */
+    .tree{
+      position:relative;
+      width:min(1100px,100vw);
+      margin-inline:auto;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:10px;
+      overflow:visible;
+    }
+    .tree-top{
+      position:absolute;
+      left:50% !important;
+      transform:translateX(-50%) !important;
+      top:var(--star-top) !important;
+      width:80px !important;   /* ← PROVA QUI LA MISURA CHE VUOI */
+      height:70px !important;  /* ← STESSO VALORE PER ORA */
+      filter:drop-shadow(0 4px 8px rgba(0,0,0,.18));
+      z-index:2;
+      pointer-events:none;
+      animation: twinkle 3.6s ease-in-out infinite;
+    }
+    .tree > .snow + .tree-row{ margin-top:var(--crown-gap); }
+    .tree-row{
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      gap:var(--gap);
+      margin:0 auto;
+      width:100%;
+    }
+    /* Tronco dell'albero */
+.trunk {
+  position: relative;
+ width: 12vw;      /* adattabile al dispositivo */
+    max-width: 90px;  /* limite desktop */
+    min-width: 55px;  /* limite mobile */
+    
+    height: 8vw;
+    max-height: 65px;
+    min-height: 35px;
+
+    background: #8c6239;
+    border-radius: 20px;
+    margin-top: 20px;
+  margin: 0.2vw auto 0;   /* distanza dalle palline */
+  background: #8b5a2b;
+  border-radius: 9px;    /* angoli arrotondati */
+  box-shadow: 0 6px 14px rgba(0,0,0,0.2);
+}
+
+/* === LIVELLI ALBERO / NEVE === */
+
+/* il wrapper dell'albero diventa il contenitore dei livelli */
+#abTree{
+  position: relative;
+}
+
+/* neve posata: sotto tronco, palline e pulsanti ma sopra lo sfondo */
+#groundSnow {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 45px; /* qui la regoleremo dopo */
+  width: 100%;
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* SVG neve */
+#groundSnow .snow-svg {
+  width: 100%;
+  height: 230px; /* regola la dimensione verticale */
+  display: block;
+}
+
+
+/* albero, palline, tronco e pulsanti sopra la neve */
+#tree,
+#tree .ornament,
+.trunk,
+#treeNav{
+  position: relative;
+  z-index: 2;
+}
+
+
+
+    /* ===== PALLINE ===== */
+    .ornament{
+      --size:var(--ball);
+      width:var(--size); height:var(--size);
+      border-radius:999px; position:relative; background:#fff; border:3px solid var(--teal2);
+      box-shadow:0 8px 22px rgba(0,0,0,.12), inset 0 0 0 6px #fff;
+      cursor:pointer; overflow:hidden; transition:transform .15s, box-shadow .15s, filter .15s, opacity .15s;
+      background-repeat:no-repeat !important; background-position:center 54% !important; background-size:64% !important;
+    }
+    .ornament:hover{
+      transform:translateY(-2px) scale(1.03);
+      box-shadow:0 12px 26px rgba(0,0,0,.16), inset 0 0 0 6px #fff;
+    }
+    .ornament:active{ transform:translateY(0) scale(.99); }
+    .ornament .clip{
+      position:absolute; top:-6px; left:50%; transform:translateX(-50%);
+      width:22px; height:14px; border-radius:6px 6px 0 0;
+      background:#d9f4f5; border:2px solid var(--teal2); box-shadow:0 1px 0 #fff inset;
+    }
+    .ornament .badge{
+      position:absolute; bottom:4px; right:6px; font:700 11px/1 'Segoe UI',system-ui; color:#fff;
+      background:var(--teal2); padding:4px 7px; border-radius:999px; box-shadow:0 2px 10px rgba(0,0,0,.2); z-index:3; display:inline-block;
+    }
+
+    /* BLOCCATE */
+    .ornament.locked{
+      cursor:not-allowed;
+      filter:grayscale(.85) brightness(.95);
+      opacity:.7;
+      border-color:#aeb7b9;
+    }
+    .ornament.locked:hover{
+      transform:none;
+      box-shadow:0 6px 18px rgba(0,0,0,.1), inset 0 0 0 6px #fff;
+    }
+    .ornament.locked .clip{ background:#e7ecee; border-color:#aeb7b9; }
+    .ornament.locked .badge{ background:#aeb7b9; }
+
+    /* anti-override */
+    #abTree .ornament , #abTree .ornament .badge, #abTree .ornament .clip{
+      display:block !important; visibility:visible !important; opacity:1 !important;
+    }
+
+    /* ===== NEVE ===== */
+    .snow{pointer-events:none}
+    .snow, .snow::before, .snow::after{
+      content:""; position:absolute;  top:0;
+    left:0;
+    right:0;
+    bottom:80px;   /* ← QUI si fermano i fiocchi */
+    overflow:hidden;
+    }
+
+    .snow{
+      background-image:
+        radial-gradient(8px 8px at 15% 10%, rgba(255,255,255,.95) 50%, transparent 51%),
+        radial-gradient(7px 7px  at 45% 25%, rgba(255,255,255,.95) 50%, transparent 51%),
+        radial-gradient(6px 6px  at 80% 15%, rgba(255,255,255,.95) 50%, transparent 51%),
+        radial-gradient(7px 7px  at 10% 55%, rgba(255,255,255,.95) 50%, transparent 51%),
+        radial-gradient(6px 6px  at 70% 45%, rgba(255,255,255,.95) 50%, transparent 51%),
+        radial-gradient(8px 8px  at 90% 70%, rgba(255,255,255,.95) 50%, transparent 51%);
+      background-size: 700px 900px, 760px 980px, 680px 860px, 720px 920px, 800px 1000px, 740px 940px;
+      animation: snowFallA 14s linear infinite;
+    }
+    .snow::before{
+      background-image:
+        radial-gradient(6px 6px at 20% 20%, rgba(255,255,255,.9) 50%, transparent 51%),
+        radial-gradient(5px 5px at 40% 35%, rgba(255,255,255,.9) 50%, transparent 51%),
+        radial-gradient(4px 4px at 65% 15%, rgba(255,255,255,.9) 50%, transparent 51%),
+        radial-gradient(5px 5px at 12% 70%, rgba(255,255,255,.9) 50%, transparent 51%),
+        radial-gradient(4px 4px at 85% 55%, rgba(255,255,255,.9) 50%, transparent 51%),
+        radial-gradient(5px 5px at 55% 80%, rgba(255,255,255,.9) 50%, transparent 51%);
+      background-size: 900px 1200px, 860px 1100px, 920px 1180px, 880px 1120px, 940px 1260px, 900px 1200px;
+      animation: snowFallB 20s linear infinite;
+      opacity:calc(var(--snow)*.85);
+    }
+    .snow::after{
+      background-image:
+        radial-gradient(4px 4px at 25% 10%, rgba(255,255,255,.8) 50%, transparent 51%),
+        radial-gradient(3px 3px at 50% 30%, rgba(255,255,255,.8) 50%, transparent 51%),
+        radial-gradient(4px 4px at 75% 20%, rgba(255,255,255,.8) 50%, transparent 51%),
+        radial-gradient(3px 3px at 15% 60%, rgba(255,255,255,.8) 50%, transparent 51%),
+        radial-gradient(4px 4px at 90% 50%, rgba(255,255,255,.8) 50%, transparent 51%),
+        radial-gradient(3px 3px at 60% 85%, rgba(255,255,255,.8) 50%, transparent 51%);
+      background-size: 1200px 1600px, 1140px 1500px, 1260px 1700px, 1180px 1560px, 1320px 1760px, 1240px 1680px;
+      animation: snowFallC 28s linear infinite;
+      opacity:calc(var(--snow)*.65);
+    }
+
+    @keyframes snowFallA{
+      0%   { background-position:   0px -200px,   0px -180px,   0px -220px,   0px -160px,   0px -260px,   0px -190px; }
+      50%  { background-position:  40px  350px,  30px  340px,  50px  360px,  35px  320px,  55px  380px,  28px  330px; }
+      100% { background-position: -10px  900px, -20px  880px,   0px  920px, -15px  860px,   5px  980px, -18px  900px; }
+    }
+    @keyframes snowFallB{
+      0%   { background-position:   0px -220px,   0px -210px,   0px -230px,   0px -200px,   0px -260px,   0px -190px; }
+      50%  { background-position: -30px  420px, -20px  430px, -25px  440px, -35px  410px, -22px  470px, -28px  435px; }
+      100% { background-position:  10px 1040px,  20px 1020px,   5px 1080px,  18px 1000px,  12px 1140px,  16px 1060px; }
+    }
+    @keyframes snowFallC{
+      0%   { background-position:   0px -260px,   0px -240px,   0px -280px,   0px -260px,   0px -300px,   0px -250px; }
+      50%  { background-position:  20px  520px,  10px  540px,  18px  560px,  14px  520px,  22px  600px,  12px  560px; }
+      100% { background-position: -20px 1280px, -30px 1240px, -18px 1320px, -24px 1280px, -16px 1400px, -26px 1360px; }
+    }
+
+    /* ===== MODAL OVERLAY ===== */
+    .modal{
+      position:fixed;
+      inset:0;
+      z-index:9999;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding:16px;
+      background:rgba(0,0,0,.35);
+      backdrop-filter:blur(2px);
+    }
+    .modal[open]{ display:flex; }
+
+    .modal-close{
+      position:absolute;
+      top:8px;
+      right:8px;
+      background:#fff;
+      border:2px solid var(--teal2);
+      color:var(--teal2);
+      padding:8px 12px;
+      border-radius:999px;
+      font-weight:700;
+      cursor:pointer;
+      box-shadow:0 8px 22px rgba(0,0,0,.18);
+      z-index:20;
+    }
+
+    /* ===== POPUP DEL GIORNO ===== */
+    .day-popup{
+      position:fixed; inset:0; display:none; align-items:center; justify-content:center;
+      background:rgba(0,0,0,.35); z-index:10000; backdrop-filter:blur(2px);
+    }
+    .day-popup[open]{ display:flex; }
+    .day-card{
+      background:#fff; border:3px solid var(--teal2); border-radius:16px;
+      padding:18px 22px; text-align:center; box-shadow:0 12px 30px rgba(0,0,0,.22);
+      font-weight:700; color:var(--teal2);
+    }
+/* ===== POPUP PRE-DONO (Aspetta! Leggimi) ===== */
+.gift-pre-popup{
+  position:fixed;
+  inset:0;
+  display:none;
+  align-items:center;
+  justify-content:flex-end; /* a destra, laterale */
+  background:rgba(0,0,0,.35);
+  backdrop-filter:blur(2px);
+  z-index:11000;
+}
+.gift-pre-popup[open]{ display:flex; }
+
+.gift-pre-inner{
+  background:#ffffff;
+  border-radius:20px;
+  padding:18px 22px;
+  max-width:320px;
+  margin-right:clamp(10px,4vw,40px);
+  box-shadow:0 12px 30px rgba(0,0,0,.26);
+  border:3px solid var(--teal2);
+  text-align:center;
+  font-family:'Quicksand','Segoe UI',system-ui,-apple-system,Arial,sans-serif;
+  animation: giftSlideIn .6s ease-out;
+}
+
+.gift-pre-icon{
+  font-size:32px;
+  margin-bottom:8px;
+}
+
+.gift-pre-title{
+  margin:0 0 4px;
+  font-size:18px;
+  font-weight:700;
+  color:#F8737A;
+}
+
+.gift-pre-text{
+  margin:0 0 10px;
+  font-size:14px;
+  color:#444;
+}
+
+.gift-pre-btn{
+  background:#ffffff;
+  color:var(--teal);
+  border:2px solid var(--teal);
+  border-radius:999px;
+  padding:8px 20px;
+  font-size:14px;
+  font-weight:700;
+  cursor:pointer;
+  font-family:'Quicksand','Segoe UI',system-ui,-apple-system,Arial,sans-serif;
+}
+
+/* animazione laterale da destra */
+@keyframes giftSlideIn{
+  from{
+    transform:translateX(120%);
+    opacity:0;
+  }
+  to{
+    transform:translateX(0);
+    opacity:1;
+  }
+}
+
+    /* === ANIMAZIONI ORNAMENTI === */
+    @keyframes twinkle {
+      0%,100%{ filter:drop-shadow(0 4px 8px rgba(0,0,0,.18)) brightness(1) }
+      50%{ filter:drop-shadow(0 6px 10px rgba(0,0,0,.22)) brightness(1.05) }
+    }
+
+    @keyframes orbPop { 0%{transform:scale(1)} 60%{transform:scale(1.06)} 100%{transform:scale(1)} }
+    .ornament.pop { animation: orbPop .18s ease-out }
+
+    .ornament.glow::after{
+      content:""; position:absolute; inset:-4px; border-radius:999px;
+      box-shadow:0 0 0 0 rgba(22,175,184,.0), 0 0 24px 6px rgba(22,175,184,.25);
+      animation: orbGlow .5s ease-out forwards; pointer-events:none;
+    }
+    @keyframes orbGlow{
+      from{ box-shadow:0 0 0 0 rgba(22,175,184,.0), 0 0 0 0 rgba(22,175,184,.0) }
+      to  { box-shadow:0 0 0 6px rgba(22,175,184,.12), 0 0 26px 10px rgba(22,175,184,.25) }
+    }
+
+    @keyframes dayPulse { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-2px)} }
+    .ornament.is-today:not(.locked){ animation: dayPulse 2.6s ease-in-out infinite; }
+
+    @keyframes tremble {
+      0%{ transform:translateX(0) rotate(0) }
+      20%{ transform:translateX(-2px) rotate(-1.5deg) }
+      40%{ transform:translateX(2px) rotate(1.4deg) }
+      60%{ transform:translateX(-1.5px) rotate(-1deg) }
+      80%{ transform:translateX(1.2px) rotate(.8deg) }
+      100%{ transform:translateX(0) rotate(0) }
+    }
+    .ornament.tremble { animation: tremble .6s ease-in-out; }
+
+    /* ===== FLASHCARD (NUOVO STILE 4 FASI) ===== */
+    #allegra-card{
+      padding:40px 0;
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      flex-direction:column;
+    }
+
+    .card-container{
+  position:relative;
+  width:320px;
+  max-width:100%;
+  height:520px;          /* base: mobile piccolo */
+  perspective:1200px;
+  touch-action:pan-y;
+}
+
+/* mobile medio / tablet in verticale */
+@media (min-width:480px){
+  .card-container{
+    height:560px;
+  }
+}
+
+/* tablet orizzontale e desktop */
+@media (min-width:768px){
+  .card-container{
+    height:600px;
+  }
+}
+
+    /* Frecce esterne (stile nuovo) */
+    .nav-arrow{
+      position:absolute;
+      top:50%;
+      transform:translateY(-50%);
+      background:none !important;
+      border:none !important;
+      box-shadow:none !important;
+      padding:0 !important;
+      cursor:pointer;
+      z-index:50;
+      font-size:48px;
+      font-weight:700;
+      color:var(--teal);
+      line-height:1;
+      user-select:none;
+      transition:opacity .2s ease;
+    }
+    .nav-arrow:hover{ opacity:.6; }
+    .nav-prev{ left:-45px; }
+    .nav-next{ right:-45px; }
+
+    /* MOBILE: le frecce non devono apparire */
+    @media (max-width:768px){
+      .nav-arrow{ display:none !important; }
+    }
+
+    /* Flip base */
+    .card{
+      width:100%; height:100%;
+      position:relative;
+      transform-style:preserve-3d;
+      transition:transform .9s ease-in-out;
+      transform-origin:center center;
+    }
+    .card.flipped{ transform:rotateY(180deg); }
+
+    .card-face{
+      position:absolute; inset:0;
+      border-radius:28px;
+      backface-visibility:hidden; -webkit-backface-visibility:hidden;
+      box-shadow:0 10px 30px rgba(0,0,0,.1);
+      background:#fff;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      text-align:center;
+      border:3px solid var(--teal2);
+      padding-top:60px;
+    }
+    .front{transform:rotateY(0deg);}
+    .back{transform:rotateY(180deg);}
+
+    .top-logo{
+      position:absolute;
+      top:15px;
+      left:50%;
+      transform:translateX(-50%);
+      z-index:10;
+    }
+    #allegra-card .top-logo img.allegra-logo{
+      height:35px !important;
+      width:auto !important;
+      display:block !important;
+      max-width:180px !important;
+      object-fit:contain;
+    }
+
+    .main-image{width:140px;margin-bottom:200px;}
+    .flip-button{display:none;}
+
+    .back-content{
+      position:relative;
+      width:100%; height:100%;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      padding:10px 20px 56px;
+      overflow:hidden;
+    }
+    .back-inner{width:100%;}
+
+    .card-number{
+      position:absolute;
+      bottom:8px;
+      right:12px;
+      font-size:13px;
+      color:#888;
+      font-weight:500;
+      font-family:'Quicksand','Segoe UI',system-ui,-apple-system,Arial,sans-serif;
+    }
+
+    /* FRONT stile casella avvento */
+    .card-face.front{
+      background:#F8737A;
+      border-color:#F8737A;
+      color:#ffffff;
+    }
+    .front .top-logo{ top:22px; }
+    .front .main-image{
+  width:140px;
+  height:140px;
+  border-radius:999px;
+  background:#ffffff;
+  border:4px solid #FFD5D5;
+  box-shadow:0 6px 14px rgba(0,0,0,.18);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:0;
+  overflow:hidden;
+}
+
+/* l’icona dentro al cerchio */
+.front .main-image img{
+  max-width:70%;
+  max-height:70%;
+  object-fit:contain;
+  display:block;
+}
+
+    .front .card-number{
+      position:absolute;
+      bottom:33%;
+      left:50%;
+      transform:translateX(-50%);
+      font-size:100px;
+      font-weight:700;
+      letter-spacing:.03em;
+      color:#ffffff;
+    }
+
+    /* BACK stile bianco */
+    .card-face.back{
+      border-radius:28px;
+      border-color:#F8737A;
+      background:#ffffff;
+    }
+
+    /* ===== SEZIONE 2: testo + immagine + pulsante parole ===== */
+    .intro-section{
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      text-align:center;
+      gap:10px;
+    }
+    .intro-title{
+      font-size:20px;
+      font-weight:700;
+      color:#ed6e73;
+      text-transform:uppercase;
+      line-height:1.2;
+      margin-bottom:6px;
+    }
+    .intro-title span{
+      display:block;
+      font-size:14px;
+      font-weight:500;
+      text-transform:none;
+      color:#ed6e73;
+      margin-top:2px;
+    }
+    .intro-image{
+      width:68px;
+      height:68px;
+      border-radius:999px;
+      background:#FFE4E4;
+      padding:12px;
+      object-fit:contain;
+      box-shadow:0 4px 10px rgba(0,0,0,.15);
+    }
+    .intro-text{
+      font-size:14px;
+      line-height:1.5;
+      color:#555;
+      margin-top:4px;
+    }
+
+    /* ===== SEZIONE 3: Parole utili (3 righe IT/EN) ===== */
+    .words-section{
+      display:none;
+      flex-direction:column;
+      align-items:center;
+      text-align:center;
+      gap:10px;
+    }
+    .words-top-title{
+      font-size:20px;
+      font-weight:700;
+      color:#F8737A;
+      text-transform:uppercase;
+      line-height:1.2;
+      margin-bottom:6px;
+    }
+    .words-top-title span{
+      display:block;
+      font-size:14px;
+      font-weight:500;
+      text-transform:none;
+      color:#ed6e73;
+      margin-top:2px;
+    }
+    .words-head{
+      font-size:16px;
+      font-weight:700;
+      text-transform:uppercase;
+      margin-top:6px;
+      color:#333;
+    }
+    .words-head span{
+      display:block;
+      font-size:14px;
+      font-weight:500;
+      text-transform:none;
+      color:#888;
+      margin-top:2px;
+    }
+    .words-list{
+      margin-top:4px;
+      width:100%;
+      max-width:220px;
+      display:flex;
+      flex-direction:column;
+      gap:4px;
+      font-size:14px;
+      color:#444;
+    }
+    .words-row{
+      display:flex;
+      justify-content:space-between;
+      gap:8px;
+    }
+    .word-it{text-align:left;}
+    .word-en-col{text-align:right;font-weight:600;}
+
+    /* ===== SEZIONE 4: 3 frasi IT / EN ===== */
+    .examples{
+      width:100%;
+      display:none;
+      flex-direction:column;
+      align-items:center;
+      margin-top:10px;
+      gap:12px;
+    }
+    .example-text{
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+    }
+
+    .frase-it{font-weight:400;font-size:14px;text-align:center}
+    .frase-en{font-weight:700;font-size:14px;text-align:center}
+
+    /* ===== Bottone generico ===== */
+    .btn{
+      background:#ed6e73;
+      color:#fff;
+      border:none;
+      padding:10px 20px;
+      border-radius:10px;
+      cursor:pointer;
+      margin-top:12px;
+      font-size:15px;
+      font-weight:600;
+    }
+.front-flip-btn{
+  margin-top:12px;
+  background:#ffffff;
+  color:#FB7072;
+  border:0px solid #08B5BB;
+  font-size:15px;
+  font-weight:600;
+  padding:10px 20px;
+  border-radius:14px;
+  cursor:pointer;
+  z-index:20;
+}
+
+.front-flip-btn:active{
+  transform:scale(.97);
+}
+
+    /* modalità densa */
+    .back-content.dense .intro-title{font-size:18px}
+    .back-content.dense .intro-title span{font-size:13px}
+    .back-content.dense .intro-text{font-size:13px}
+    .back-content.dense .btn{padding:8px 16px;font-size:14px;margin-top:8px}
+
+        /* modalità extra-densa (testo ancora più compatto) */
+    .back-content.extra-dense .intro-title,
+    .back-content.extra-dense .words-top-title{
+      font-size:16px;
+    }
+    .back-content.extra-dense .intro-title span,
+    .back-content.extra-dense .words-top-title span{
+      font-size:12px;
+    }
+    .back-content.extra-dense .intro-text{
+      font-size:12px;
+    }
+    .back-content.extra-dense .words-list{
+      font-size:12px;
+    }
+    .back-content.extra-dense .frase-it,
+    .back-content.extra-dense .frase-en{
+      font-size:13px;
+    }
+    .back-content.extra-dense .btn{
+      padding:7px 14px;
+      font-size:13px;
+      margin-top:6px;
+    }
+
+    /* Page turn overlay */
+    .page-turner{
+      position:absolute; inset:0; border-radius:28px; z-index:50;
+      transform-style:preserve-3d; pointer-events:none;
+    }
+    .page-turner *{ backface-visibility:hidden; -webkit-backface-visibility:hidden; }
+    .page-turner.dir-next{ transform-origin:left center; animation:turnNext 800ms ease both; }
+    .page-turner.dir-prev{ transform-origin:right center; animation:turnPrev 800ms ease both; }
+    .page-turner::after{
+      content:''; position:absolute; inset:0; border-radius:inherit; pointer-events:none;
+      background:linear-gradient(to left, rgba(0,0,0,.18), rgba(0,0,0,0) 40%);
+      opacity:0; animation:turnShade 800ms ease both;
+    }
+    @keyframes turnNext{ from{ transform:rotateY(0deg)} to{ transform:rotateY(-180deg)} }
+    @keyframes turnPrev{ from{ transform:rotateY(0deg)} to{ transform:rotateY(180deg)} }
+    @keyframes turnShade{ 0%{opacity:0} 30%{opacity:.35} 100%{opacity:0} }
+
+    /* ===== Bottone “Torna indietro” (sotto la card) ===== */
+    .btn-back{
+      background:#ffffff;
+      color:var(--teal);
+      border:2px solid var(--teal);
+      font-size:13px;
+      padding:8px 18px;
+      margin-top:18px;
+      border-radius:999px;
+      cursor:pointer;
+      font-weight:600;
+      display:none;
+      align-self:center;
+    }
+    /* mettilo verso la fine del tuo <style>, dopo la definizione .tree esistente */
+.tree{
+  padding-top: 40px; /* prova 60–90px finché ti piace */
+}
+
+@media (max-width: 768px){
+  .tree-top{
+    width:75px !important;   /* più grande sul mobile */
+    height:60px !important;
+  }
+}
+@media (max-width: 768px){
+  .tree-top{
+    top: 0px !important;   /* ← REGOLA QUI LA DISTANZA */
+  }
+}
+/* Regola distanza tronco SOLO su mobile */
+@media (max-width: 768px){
+  .trunk{
+    margin-top: 0px !important;  /* prova 0px se la vuoi ancora più attaccata */
+  }
+}
+
+#frontLogo {
+  filter: brightness(0) invert(1) !important;
+}
+
+.front-subtitle{
+  position: absolute;
+  top: 66%;  /* 🔥 ALZA / ABBASSA QUI */
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  
+  font-size: 16px;
+  font-weight: 700;
+  color: #ffffff;
+  text-align: center;
+  pointer-events: none;
+}
+
+
+.front-subtitle span{
+  display:block;
+  font-size:14px;
+  font-weight:500;
+  opacity:0.9;
+  margin-top:3px;
+}
+/* BLOCCO TITOLO FASE 2 (IT + EN) */
+#introTitle {
+  margin-top: 0% !important;     /* distanza dal top card */
+  margin-bottom: 8% !important;  /* spazio verso il paragrafo */
+  text-align: center;
+}
+
+/* SOTTOTITOLO (la riga inglese dentro al titolo) */
+#introTitle span {
+  display: block;
+  margin-top: 5% !important;   /* spazio tra titolo IT e sottotitolo EN */
+}
+
+/* PARAGRAFO DESCRITTIVO */
+#introText {
+  margin-top: 8% !important;     /* spazio sotto il blocco titolo+sottotitolo */
+  line-height: 1.6;
+}
+/* ===== FASE 3 – TITOLO + SOTTOTITOLO (PAROLE UTILI) ===== */
+#wordsTopTitle {
+  margin-top: 0% !important;     /* distanza dal top card nella fase 3 */
+  margin-bottom: 8% !important;  /* spazio verso la tabella delle parole */
+  text-align: center;
+}
+
+/* riga inglese sotto al titolo, come in fase 2 */
+#wordsTopTitle span {
+  display: block;
+  margin-top: 5% !important;   /* spazio tra titolo IT e sottotitolo EN */
+}
+/* ===== FASE 3 — SPAZIATURA TRA LE PAROLE ===== */
+
+/* Prima coppia */
+#w1IT, #w1EN {
+  display: inline-block;
+  margin-bottom: 4% !important;
+}
+
+/* Seconda coppia */
+#w2IT, #w2EN {
+  display: inline-block;
+  margin-bottom: 4% !important;
+}
+
+/* Terza coppia */
+#w3IT, #w3EN {
+  display: inline-block;
+  margin-bottom: 4% !important;
+}
+/* distanza tra immagine e titolo della fase 3 */
+#wordsImage {
+  margin-bottom: 5% !important;
+}
+
+/* distanza tra il titolo “Parole utili” e la prima riga delle parole */
+#wordsTopTitle {
+  margin-bottom: 8% !important;
+}
+
+/* ===== FONT QUICKSAND SU TUTTA LA CARD ===== */
+#flashcard *,
+.card-face *,
+button,
+.front-subtitle,
+#introTitle,
+#introText,
+#wordsTopTitle,
+.words-row *,
+.examples-row * {
+    font-family: 'Quicksand', sans-serif !important;
+}
+    /* ===== POPUP DONO NASCOSTO ===== */
+
+.gift-overlay{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,0.45);
+  display:flex;
+  align-items:flex-start;
+  justify-content:center;
+  opacity:0;
+  pointer-events:none;
+  transition:opacity .35s ease;
+  z-index:9999;
+}
+
+.gift-overlay.is-visible{
+  opacity:1;
+  pointer-events:auto;
+}
+
+.gift-modal{
+  margin-top:-40vh; /* parte alta fuori dallo schermo */
+  background:#ffffff;
+  border-radius:24px;
+  max-width:480px;
+  width:90%;
+  padding:24px 22px 26px;
+  box-shadow:0 18px 45px rgba(0,0,0,.25);
+  transform:translateY(-40px);
+  opacity:0;
+  transition:transform .6s cubic-bezier(.16,1,.3,1),
+             opacity .6s cubic-bezier(.16,1,.3,1);
+  font-family:'Quicksand',sans-serif;
+}
+
+.gift-overlay.is-visible .gift-modal{
+  margin-top:80px;   /* “scende dal cielo” */
+  transform:translateY(0);
+  opacity:1;
+}
+
+.gift-close{
+  position:absolute;
+  top:10px;
+  right:14px;
+  border:none;
+  background:transparent;
+  font-size:22px;
+  line-height:1;
+  cursor:pointer;
+  color:#F87373;
+}
+
+.gift-title{
+  font-size:18px;
+  text-align:center;
+  margin:10px 0 12px;
+  color:#F94E6A;
+  font-weight:700;
+}
+.gift-title span{
+  display:block;
+  font-size:14px;
+  color:#F9A1B5;
+  font-weight:500;
+}
+
+.gift-text{
+  font-size:14px;
+  line-height:1.5;
+  color:#555555;
+  text-align:left;
+}
+
+/* ===== Distanza immagine tonda / titoli FASE 2-3-4 ===== */
+
+/* desktop/tablet */
+#introSection,
+#wordsSection {
+  margin-top: 60px !important;  /* avvicina i titoli all'immagine */
+}
+
+/* schermi piccoli (mobile) */
+@media (max-width: 480px) {
+  #introSection,
+  #wordsSection {
+    margin-top: 80px !important; /* ancora più vicino su mobile */
+  }
+}
+
+
+/* ========== IMMAGINI FASE 2 E FASE 3: PIÙ GRANDI MA NON TAGLIATE ========== */
+
+/* Fase 2 – icona principale */
+#introImage,
+#wordsImage {
+  width: 35% !important;
+  height: 35% !important;
+  object-fit: contain !important;
+  display: block;
+  margin: 0 auto;
+  transform: scale(1.0);        /* riduce leggermente l’immagine dentro il cerchio */
+  transform-origin: center center;
+}
+
+#freeNav, 
+#btnUnlockAll, 
+#btnRelock, 
+#btnTestDay {
+    display: none !important;
+}
+
+
+  </style>
+</head>
+<body>
+
+<section id="abTree" aria-label="ab.LAB – Albero di Natale interattivo">
+  <p class="subtitle">
+    Tocca la pallina del giorno per aprire la casella
+  </p>
+<audio id="jingleAudio" preload="auto">
+  <source src="https://uploads3.fw360.it/uploads/env/4/9380/img/media/christmas-is-christmas-outro-409046.mp3?1763402505" type="audio/mpeg">
+</audio>
+  <div class="tree" id="tree">
+
+  <!-- ⭐ Top personalizzata -->
+  <img class="tree-top"
+       src="https://uploads3.fw360.it/uploads/env/4/9380/img/media/stella_puntale.png?1763470669"
+       alt="ab.LAB Christmas top" />
+
+  <!-- Neve -->
+  <div class="snow" aria-hidden="true"></div>
+
+  <!-- ⚠️ Pivot invisibile per l'inserimento delle righe (necessario per il JS) -->
+  <div id="treePivot" style="height:0; width:100%; visibility:hidden;"></div>
+
+  <!-- Le righe con le palline verranno inserite automaticamente qui sopra dal JS -->
+
+</div>
+
+    <div class="snow" aria-hidden="true"></div>
+
+    <!-- righe palline iniettate via JS -->
+
+    <div class="trunk" aria-hidden="true"></div>
+
+    <!-- NAV: pulsanti test -->
+    <div id="treeNav">
+      <button class="nav-btn" id="btnUnlockAll">Sblocca tutte</button>
+      <button class="nav-btn" id="btnRelock">Ripristina blocco</button>
+      <button class="nav-btn" id="btnTestDay">Test animazione</button>
+    </div>
+  </div>
+    <!-- ❄️ NEVE POSATA ALLA BASE DELL'ALBERO -->
+  <div id="groundSnow">
+  <svg viewBox="0 0 500 120" preserveAspectRatio="none" class="snow-svg">
+    <path d="M0 80 Q50 60 100 80 T200 80 T300 80 T400 80 T500 80 L500 120 L0 120 Z" fill="#ffffff"/>
+  </svg>
+</div>
+
+</section>
+
+<!-- POPUP GIORNO -->
+<div class="day-popup" id="dayPopup">
+  <div class="day-card" id="dayCard">Oggi è il 1 dicembre 🎄</div>
+</div>
+
+<!-- MODAL con nuova flashcard -->
+<div class="modal" id="modal">
+  <button class="modal-close" id="closeModal" aria-label="Chiudi">Chiudi ✕</button>
+
+  <div id="allegra-card">
+    <div class="card-container">
+      <button class="nav-arrow nav-prev" id="btnPrev" aria-label="Carta precedente">«</button>
+      <button class="nav-arrow nav-next" id="btnNavNext" aria-label="Carta successiva">»</button>
+
+      <div class="card" id="flashcard">
+        <!-- FRONT -->
+        <div class="card-face front">
+          <div class="top-logo">
+            <img id="frontLogo" class="allegra-logo" alt="abLAB" height="35"/>
+          </div>
+          <div class="main-image">
+  <img id="mainImage" src="" alt="immagine" />
+</div>
+          <button class="flip-button" id="flipBtn">Gira la casella</button>
+          <div class="card-number" id="cardNumberFront"></div>
+           <!-- 👇 SPOSTATO DENTRO la copertina -->
+  <p class="front-subtitle">
+    L’ATTIVITÀ DI OGGI È…<br>
+    <span>Today’s activity is...</span>
+  </p>
+  <button id="frontFlipBtn" class="front-flip-btn">Clicca qui</button>
+
+        </div>
+
+        <!-- BACK -->
+        <div class="card-face back">
+          <div class="top-logo">
+            <img id="topLogo" class="allegra-logo" alt="abLAB" height="35"/>
+          </div>
+
+          <div class="back-content" id="backContent">
+            <div class="back-inner" id="backInner">
+
+              <!-- FASE 2: TITOLO + IMMAGINE + PARAGRAFO + CTA -->
+              <div class="intro-section" id="introSection">
+                <div class="intro-title" id="introTitle">
+                  IL CUORE DEL NATALE
+                  <span>The Heart of Christmas</span>
+                </div>
+                <img id="introImage" class="intro-image" src="" alt="Icona" />
+                <p class="intro-text" id="introText">
+                  Testo descrittivo da personalizzare per questa card.
+                </p>
+                <button class="btn" id="btnShowWords">Scopri le parole</button>
+              </div>
+
+              <!-- FASE 3: PAROLE UTILI + 3 RIGHE IT/EN + CTA ESEMPI -->
+              <div class="words-section" id="wordsSection">
+                <div class="words-top-title" id="wordsTopTitle">
+                  IL CUORE DEL NATALE
+                  <span>The Heart of Christmas</span>
+                </div>
+                <img id="wordsImage" class="intro-image" src="" alt="Icona parole utili" />
+
+                <div class="words-head">
+                  FRASI UTILI
+                  <span>useful sentences</span>
+                </div>
+
+                <div class="words-list" id="wordsList">
+                  <div class="words-row">
+                    <span class="word-it" id="w1IT">materiali</span>
+                    <span class="word-en-col" id="w1EN">materials</span>
+                  </div>
+                  <div class="words-row">
+                    <span class="word-it" id="w2IT">forbici</span>
+                    <span class="word-en-col" id="w2EN">scissors</span>
+                  </div>
+                  <div class="words-row">
+                    <span class="word-it" id="w3IT">iniziare</span>
+                    <span class="word-en-col" id="w3EN">to start</span>
+                  </div>
+                </div>
+
+                <button class="btn" id="btnShowExamples">Scopri gli esempi</button>
+
+                <!-- FASE 4: 3 FRASI IT/EN -->
+                <div class="examples" id="examples">
+                  <div class="example-text">
+                    <span id="ex1IT" class="frase-it"></span>
+                    <span id="ex1EN" class="frase-en"></span>
+                  </div>
+                  <div class="example-text">
+                    <span id="ex2IT" class="frase-it"></span>
+                    <span id="ex2EN" class="frase-en"></span>
+                  </div>
+                  <div class="example-text">
+                    <span id="ex3IT" class="frase-it"></span>
+                    <span id="ex3EN" class="frase-en"></span>
+                  </div>
+                </div>
+
+              </div>
+
+            </div>
+          </div>
+          <div class="card-number" id="cardNumberBack"></div>
+        </div>
+      </div><!-- /.card -->
+    </div><!-- /.card-container -->
+
+    <!-- 🔙 Bottone Torna indietro SOTTO la card -->
+    <button class="btn-back" id="btnBackStep">← Torna indietro</button>
+<!-- POPUP DONO NASCOSTO -->
+<div class="gift-overlay" id="giftOverlay" aria-hidden="true">
+  <div class="gift-modal" id="giftModal">
+    <button type="button" class="gift-close" id="giftClose" aria-label="Chiudi pop-up">×</button>
+    <h2 class="gift-title">
+      IL DONO NASCOSTO<span>The Hidden Gift</span>
+    </h2>
+    <p class="gift-text">
+      Per fare una piccola sorpresa crea una tasca, magari con una busta, da incollare sulla moodboard e nascondi dentro un messaggio, un disegno, una parola gentile, un giochino o un piccolo dolcetto da far aprire al tuo bambino domani.
+      <br><br>
+      Sarà forse un regalino speciale di Babbo Natale?<br>
+      Chissà… in ogni caso il tuo piccolino ne sarà felicissimo!
+    </p>
+  </div>
+</div>
+<!-- /POPUP DONO NASCOSTO -->
+<!-- POPUP PRE-DONO: solo per mamma e papà -->
+<div class="gift-pre-popup" id="giftPrePopup" aria-hidden="true">
+  <div class="gift-pre-inner">
+    <div class="gift-pre-icon">🎁</div>
+    <p class="gift-pre-title">Aspetta!</p>
+    <p class="gift-pre-text">
+      Ho ancora un messaggio <strong>SOLO per mamma e papà!</strong>
+    </p>
+    <button id="giftPreReadBtn" class="gift-pre-btn">Leggimi</button>
+  </div>
+</div>
+
+  </div>
+</div>
+
+<script>
+  /* ===== DATA FLASHCARD – struttura nuova (esempio) ===== */
+  const cards = [
+    {
+      nomeIT: "bavaglino",
+      nomeEN: "bib",
+      image: "https://uploads3.fw360.it/uploads/env/4/9380/img/media/01_icona_avvento.png?1763122127",
+      midTitle: "IL CUORE DEL NATALE",
+      midSubtitle: "The Heart of Christmas",
+      midParagraph: "Crea il centro della vostra moodboard. Può essere un grande cuore rosso, una scritta o qualsiasi cosa rappresenti per voi il simbolo del Natale",
+      // parole utili
+      w1IT:"centro", w1EN:"center",
+      w2IT:"speciale",   w2EN:"special",
+      w3IT:"prepariamo",  w3EN:"to set up",
+      // esempi
+      ex1IT:"Cosa mettiamo al centro?",
+      ex1EN:"What shall we put in the center?",
+      ex2IT:"Deve essere speciale",
+      ex2EN:"Let's make it special",
+      ex3IT:"Prepariamo ciò che ci serve",
+      ex3EN:"Let’s set up everything we need"
+    },
+    {
+      nomeIT: "biberon",
+      nomeEN: "(baby) bottle",
+      image: "https://uploads3.fw360.it/uploads/env/4/9380/img/media/02_icona_avvento.png?1763122244",
+      midTitle: "LE MANI DELLA NOSTRA FAMIGLIA",
+      midSubtitle: "Our Family Hands",
+      midParagraph: "Ricalcate le vostre mani su fogli bianchi o colorati e decoratele come preferite. Quando avete finito, ritagliatele e incollatele sulla moodboard.",
+      w1IT:"appoggiare", w1EN:"to place",
+      w2IT:"contorno", w2EN:"outline",
+      w3IT:"preciso", w3EN:"neat",
+      ex1IT:"Appoggia la mano sul foglio", ex1EN:"Place your hand on the paper",
+      ex2IT:"Disegno il contorno della tua mano", ex2EN:"I’m going to draw the outline of your hand",
+      ex3IT:"Stai fermo così la linea viene precisa", ex3EN:"Hold still so the line is neat"
+    },
+     {
+      nomeIT: "biberon",
+      nomeEN: "(baby) bottle",
+      image: "https://uploads3.fw360.it/uploads/env/4/9380/img/media/03_icona_avvento.png?1763122678",
+      midTitle: "PAROLE GENTILI",
+      midSubtitle: "Kind Words",
+      midParagraph: "Scrivete tre parole gentili in lingua direttamente sulla moodboard, poi decoratele con fantasia.",
+      w1IT:"essere grato", w1EN:"to appreciate",
+      w2IT:"gentilezza", w2EN:"kindness",
+      w3IT:"di aiuto", w3EN:"helpful",
+      ex1IT:"Sono grato per ogni regalo", ex1EN:"I appreciate every present",
+      ex2IT:"Gentilezza prima di tutto", ex2EN:"Kindness first",
+      ex3IT:"Mi piace essere d'aiuto", ex3EN:"I love to be helpful"
+    },
+    {
+      nomeIT: "biberon",
+      nomeEN: "(baby) bottle",
+      image: "https://uploads3.fw360.it/uploads/env/4/9380/img/media/04_icona_avvento.png?1763123093",
+      midTitle: "RITRATTI DI FAMIGLIA",
+      midSubtitle: "Family Portraits",
+      midParagraph: "Fate dei disegni (o usate delle foto) dei membri della famiglia e applicatele sulla moodboard. Potete aggiungere anche amici o persone speciali",
+      w1IT:"faccia", w1EN:"face",
+      w2IT:"fotografia", w2EN:"picture",
+      w3IT:"buffo", w3EN:"silly",
+      ex1IT:"Disegnamo le facce dei nonni?", ex1EN:"Shall we draw Grandma’s and Grandpa’s faces?",
+      ex2IT:"Qui mettiamo la foto dello zio Davide", ex2EN:"Let's put Uncle Davide’s picture here",
+      ex3IT:"Ti piacciono le facce buffe, non è vero?", ex3EN:"You like silly faces, don't you?"
+    },
+    {
+      nomeIT: "biberon",
+      nomeEN: "(baby) bottle",
+      image: "https://uploads3.fw360.it/uploads/env/4/9380/img/media/05_icona_avvento.png?1763123370",
+      midTitle: "LA NOSTRA CASA",
+      midSubtitle: "Our Home",
+      midParagraph: "Create la vostra casa, quella vera o quella dei vostri sogni. Potete usare carta, cartoncino, materiali di recupero o disegnarla.",
+      w1IT:"casa", w1EN:"house",
+      w2IT:"tetto", w2EN:"roof",
+      w3IT:"camino", w3EN:"chimney",
+      ex1IT:"Dove disegnamo la nostra casa?", ex1EN:"Where should we draw our house?",
+      ex2IT:"Ricordiamo di fare il tetto", ex2EN:"Remember to draw the roof",
+      ex3IT:"E il camino per Babbo Natale? Non dimentichiamoci", ex3EN:"And what about the chimney for Santa Claus? Let's not forget it"
+    },
+    {
+      nomeIT: "biberon",
+      nomeEN: "(baby) bottle",
+      image: "https://uploads3.fw360.it/uploads/env/4/9380/img/media/06_icona_avvento.png?1763123756",
+      midTitle: "IL NOSTRO ALBERO",
+      midSubtitle: "Our Tree",
+      midParagraph: "Realizzate un albero come più vi piace: con ritagli di carta, impronte digitali, foglie, ramoscelli o tutto ciò che vi suggerisce la fantasia.",
+      w1IT:"abete", w1EN:"fir tree",
+      w2IT:"rami", w2EN:"branches",
+      w3IT:"decorazioni", w3EN:"ornaments",
+      ex1IT:"L'albero di Natale è un abete fatto così, guarda", ex1EN:"The Christmas tree is a fir tree like this, look",
+      ex2IT:"Quanti rami vogliamo fare?", ex2EN:"How many branches shall we make?",
+      ex3IT:"Facciamo le decorazioni con le impronte digitali", ex3EN:"We can make the ornaments with our fingerprints"
+    },
+    {
+      nomeIT: "biberon",
+      nomeEN: "(baby) bottle",
+      image: "https://uploads3.fw360.it/uploads/env/4/9380/img/media/07_icona_avvento.png?1763124044",
+      midTitle: "LA STELLA DI NATALE",
+      midSubtitle: "The Star of Christmas",
+      midParagraph: "Aggiungete una stella dorata, argentata o colorata all’albero che avete realizzato ieri. Potete usarla come puntale, come       decorazione o metterla dove preferite. Se vi sentite ispirati potete farne più di una e usarle come decorazioni per il vostro albero di Natale vero",
+      w1IT:"brillantini", w1EN:"glitter",
+      w2IT:"puntale", w2EN:"tree topper",
+      w3IT:"brillante", w3EN:"shiny",
+      ex1IT:"Che ne dici se  facciamo una stella piena di brillantini?", ex1EN:"What about making a star covered in glitter?",
+      ex2IT:"Vogliamo usare la stella come puntale o decorazione?", ex2EN:"Should we use the star as a tree topper or an ornament?",
+      ex3IT:"Guarda come brilla la tua stella", ex3EN:"Look how shiny your star is"
+    },
+    {
+      nomeIT: "biberon",
+      nomeEN: "(baby) bottle",
+      image: "https://uploads3.fw360.it/uploads/env/4/9380/img/media/08_icona_avvento.png?1763124349",
+      midTitle: "MAGIA D'INVERNO",
+      midSubtitle: "Winter Magic",
+      midParagraph: "Per decorare l'albero o tutta la moodboard fate piccoli fiocchi di neve: potete crearli con batuffoli di cotone, glitter, perline o disegnarli con la matita bianca (o colorata, perche no?).",
+      w1IT:"neve", w1EN:"snow",
+      w2IT:"farina", w2EN:"flour",
+      w3IT:"spargere", w3EN:"to sprinkle",
+      ex1IT:"Facciamo la neve finta", ex1EN:"Let's make some pretend snow",
+      ex2IT:"Possiamo usare la farina e un setaccio", ex2EN:"We can use some flour and a sieve",
+      ex3IT:"Spargiamo un po' di neve sulla bacheca", ex3EN:"Let’s sprinkle some snow on our board"
+    },
+    {
+      nomeIT: "biberon",
+      nomeEN: "(baby) bottle",
+      image: "https://uploads3.fw360.it/uploads/env/4/9380/img/media/09_icona_avvento.png?1763124628",
+      midTitle: "IL SENTIERO DELLE RENNE",
+      midSubtitle: "The Reindeer Path",
+      midParagraph: "Disegnate o incollate delle orme per segnare il sentiero delle renne: può portarvi dove volete!",
+      w1IT:"impronta del piede", w1EN:"footprint",
+      w2IT:"tracciato", w2EN:"trail",
+      w3IT:"condurre", w3EN:"lead",
+      ex1IT:"Oggi facciamo le impronte delle renne", ex1EN:"Today we’re making reindeer footprints",
+      ex2IT:"Guarda che bel tracciato che hai fatto", ex2EN:"Look at the beautiful trail you’ve made",
+      ex3IT:"Dove portano le orme?", ex3EN:"Where do the footprints lead?"
+    },
+    {
+      nomeIT: "biberon",
+      nomeEN: "(baby) bottle",
+      image: "https://uploads3.fw360.it/uploads/env/4/9380/img/media/10_icona_avvento.png?1763125098",
+      midTitle: "LUCI DI NATALE",
+      midSubtitle: "Christmas Lights",
+      midParagraph: "Decorate la moodboard con fili di carta, strisce dorate o piccoli adesivi che ricordano le lucine di Natale.",
+      w1IT:"luci", w1EN:"lights",
+      w2IT:"magico", w2EN:"magical",
+      w3IT:"scintillante", w3EN:"sparkly",
+      ex1IT:"Appendiamo le luci di Natale", ex1EN:"Let’s hang the Christmas lights",
+      ex2IT:"Che belle, rendono tutto più magico", ex2EN:"How lovely, they make everything<br> feel magical",
+      ex3IT:"Adesso la nostra bacheca è tutta scintillante", ex3EN:"Now our board is all sparkly"
+    },
+    {
+      nomeIT: "biberon",
+      nomeEN: "(baby) bottle",
+      image: "https://uploads3.fw360.it/uploads/env/4/9380/img/media/11_icona_avvento.png?1763125509",
+      midTitle: "IL SUONO DELLA GIOIA",
+      midSubtitle: "The Sound of Joy",
+      midParagraph: "Aggiungete campanellini veri o disegnati, o note musicali colorate, o ancora una strofa della vostra canzone preferita, che sia di Natale o meno.",
+      w1IT:"campana", w1EN:"bell",
+      w2IT:"nota musicale", w2EN:"musical note",
+      w3IT:"cantare", w3EN:"to sing",
+      ex1IT:"Come fanno le campane? Din-Don-dan", ex1EN:"What sound do the bells make? <br>Ding-dong-ding",
+      ex2IT:"Ora disegniamo le note musicali", ex2EN:"Now let’s draw the musical notes",
+      ex3IT:"Cantiamo una canzone? Quale?", ex3EN:"Shall we sing a song? Which one?"
+    },
+    {
+      nomeIT: "biberon",
+      nomeEN: "(baby) bottle",
+      image: "https://uploads3.fw360.it/uploads/env/4/9380/img/media/12_icona_avvento.png?1763126570",
+      midTitle: "I NOSTRI DESIDERI",
+      midSubtitle: "Our Wishes",
+      midParagraph: "Scrivete i vostri desideri o i regali che vorreste ricevere da Babbo Natale su piccoli bigliettini e incollateli sulla moodboard.",
+      w1IT:"desiderio", w1EN:"wish",
+      w2IT:"bigliettino", w2EN:"note",
+      w3IT:"incollare", w3EN:"to stick",
+      ex1IT:"Cosa desideri per Natale?", ex1EN:"What do you wish for Christmas?",
+      ex2IT:"Scriviamolo su un bigliettino", ex2EN:"Let’s write it on a little note",
+      ex3IT:"Vuoi attaccarlo vicino all'albero<br> o dal cuore?", ex3EN:"Do you want to stick it near the tree <br>or by the heart?"
+    },
+    {
+      nomeIT: "biberon",
+      nomeEN: "(baby) bottle",
+      image: "https://uploads3.fw360.it/uploads/env/4/9380/img/media/13_icona_avvento.png?1763126813",
+      midTitle: "MOMENTI COCCOLOSI",
+      midSubtitle: "Cozy Moments",
+      midParagraph: "Cosa vi fa sentire coccolati e al caldo durante il periodo natalizio? Tazze fumanti, coperte, calze... realizzatelo!",
+      w1IT:"coccolarsi", w1EN:"to be cozy",
+      w2IT:"coperta", w2EN:"blanket",
+      w3IT:"scegliere", w3EN:"to pick",
+      ex1IT:"Coccoliamoci un po'. Avvolgiamoci<br> nella coperta", ex1EN:"Let's be cozy. Let's wrap up in the blanket",
+      ex2IT:"Cosa disegnamo di coccoloso, un berretto,<br> la calza...?", ex2EN:"What cozy thing shall we draw, a hat, <br>the stocking...?",
+      ex3IT:"Scegli tu i colori e disegna cosa ti piace di più", ex3EN:"You pick the colors and draw what <br>you like best"
+    },
+    {
+      nomeIT: "biberon",
+      nomeEN: "(baby) bottle",
+      image: "https://uploads3.fw360.it/uploads/env/4/9380/img/media/14_icona_avvento.png?1763126894",
+      midTitle: "PROFUMI DI NATALE",
+      midSubtitle: "Christmas Smells",
+      midParagraph: "Aggiungete elementi profumati: pezzetti di cannella, bucce d’arancia o mandarino, aghi di pino, spezie natalizie o qualsiasi cosa rappresenti il vostro profumo di Natale preferito.",
+      w1IT:"annusare", w1EN:"sniff",
+      w2IT:"speziato", w2EN:"spicy",
+      w3IT:"asprigno", w3EN:"tangy",
+      ex1IT:"Senti l'odore del pan di zenzero, degli aghi di pino...", ex1EN:"Let’s smell the gingerbread, the pine needles...",
+      ex2IT:"Annusa... Ti piace? Che buon profumo", ex2EN:"Take a sniff... Do you like it? What a lovely smell",
+      ex3IT:"La buccia del mandarino è asprigna e la cannella è speziata", ex3EN:"The mandarin peel is tangy and the cinnamon is spicy"
+    },
+    {
+      nomeIT: "biberon",
+      nomeEN: "(baby) bottle",
+      image: "https://uploads3.fw360.it/uploads/env/4/9380/img/media/15_icona_avvento.png?1763127016",
+      midTitle: "L'ANGOLO DEL NOSTRO ANIMALE DOMESTICO",
+      midSubtitle: "Our Pet Corner",
+      midParagraph: "Scegliete una foto, un ritaglio o fate un disegno dei vostri animali domestici (o immaginari!) e create un piccolo angolo tutto per loro. L'animale domestico può essere sostituito anche dall'animale preferito in generale.",
+      w1IT:"baffi", w1EN:"whiskers",
+      w2IT:"pelo", w2EN:"fur",
+      w3IT:"accarezzare", w3EN:"to stroke",
+      ex1IT:"Che animali aggiungiamo alla nostra bacheca?", ex1EN:"What animal should we put on our board?",
+      ex2IT:"Facciamo il muso, poi le zampine, i baffi e il pelo", ex2EN:"Let’s make the face, then the paws, the whiskers, and the fur",
+      ex3IT:"Fai le carezzine al cane", ex3EN:"Stroke the dog nicely"
+    },
+    {
+      nomeIT: "biberon",
+      nomeEN: "(baby) bottle",
+      image: "https://uploads3.fw360.it/uploads/env/4/9380/img/media/16_icona_avvento.png?1763127108",
+      midTitle: "IL CERCHIO DEGLI AMICI",
+      midSubtitle: "The Circle of Friends",
+      midParagraph: "Scegliete insieme le foto dei vostri amici, formando un cerchio intorno al cuore del poster oppure sparsi in tutta la moodboard.",
+      w1IT:"amici", w1EN:"friends",
+      w2IT:"ad alta voce", w2EN:"out loud",
+      w3IT:"ovale", w3EN:"oval",
+      ex1IT:"Chi sono i tuoi migliori amici?", ex1EN:"Who are your best friends?",
+      ex2IT:"Diciamo i loro nomi bene ad alta voce", ex2EN:"Let's say their names out loud",
+      ex3IT:"Disegnamo un ovale per il viso e poi dopo?", ex3EN:"Let's draw an oval for the face and then what's next?"
+    },
+    {
+      nomeIT: "biberon",
+      nomeEN: "(baby) bottle",
+      image: "https://uploads3.fw360.it/uploads/env/4/9380/img/media/17_icona_avvento.png?1763127200",
+      midTitle: "LA FINESTRA INNEVATA",
+      midSubtitle: "The Snowy Window",
+      midParagraph: "Disegnate le ante di una finestra e ritagliatele. Sulla moodboard incollate un foglio blu (o carta regalo) e aggiungete piccole stelle o fiocchi di neve. Poi incollateci sopra le ante che avete fatto: questa sarà la vostra finestra d’inverno.",
+      w1IT:"sbirciare", w1EN:"to peek",
+      w2IT:"fiocco di neve", w2EN:"snowflake",
+      w3IT:"incollare", w3EN:"to glue",
+      ex1IT:"Costruiamo una finestra per sbirciare la neve che scende", ex1EN:"We’re making a window to peek at the falling snow",
+      ex2IT:"Prendiamo: forbici, carta bianca e blu e un po' di cotone per la neve", ex2EN:"Let's get: scissors, white and blue paper, and some cotton for the snow",
+      ex3IT:"Incolliamo i fiocchi di neve sul foglio blu e poi aggiungiamo la finestrella", ex3EN:"Let’s glue the snowflakes onto the blue paper, and then add the window"
+    },
+    {
+      nomeIT: "biberon",
+      nomeEN: "(baby) bottle",
+      image: "https://uploads3.fw360.it/uploads/env/4/9380/img/media/18_icona_avvento.png?1763127302",
+      midTitle: "VESTIAMO IL PUPAZZO <br>DI NEVE",
+      midSubtitle: "Wear the snowman",
+      midParagraph: "Realizzate un pupazzo di neve (disegnato, ritagliato, fatto con il cotone...) e divertitevi a vestirlo! Potete aggiungere vestiti e accessori disegnandoli, ritagliandoli da riviste o fumetti, oppure usando ciò che avete trovato fuori (foglie, rametti, ghiande…).",
+      w1IT:"vestire", w1EN:"to dress",
+      w2IT:"ritagliare", w2EN:"to cut out",
+      w3IT:"dimenticare", w3EN:"to miss",
+      ex1IT:"Oggi vestiamo un pupazzo di neve, ti va?", ex1EN:"Today we’re going to dress a snowman, do you feel like it?",
+      ex2IT:"Prima lo disegnano, poi lo decoriamo e infine lo ritagliamo", ex2EN:"First, we draw him, then we decorate him, and finally we cut him out",
+      ex3IT:"Cosa manca? Il cappello? La sciarpa? I bottoni…", ex3EN:"What’s missing? The hat? The scarf? The buttons…"
+    },
+    {
+      nomeIT: "biberon",
+      nomeEN: "(baby) bottle",
+      image: "https://uploads3.fw360.it/uploads/env/4/9380/img/media/19_icona_avvento.png?1763127407",
+      midTitle: "LA GHIRLANDA DELLE PAROLE ALLEGRE",
+      midSubtitle: "The Merry Words Garland",
+      midParagraph: "Create un cerchio con dei rametti, con dello spago, filo colorato o quello che preferite, se no disegnatela. Separatamente scrivete una parola natalizia in lingua, ritagliatela e incollatela sulla ghirlanda che avete appena fatto, quindi decidete in che punto della moodboard incollarla.",
+      w1IT:"ghirlanda", w1EN:"wreath",
+      w2IT:"bisbigliare", w2EN:"to whisper",
+      w3IT:"appendere", w3EN:"to hang",
+      ex1IT:"Oggi facciamo... una ghirlanda!<br> Ti mostro cos'è", ex1EN:"Today we’re making… a wreath! <br>I'll show you what it is",
+      ex2IT:"Bisbigliamo una parola di Natale da mettere in centro, come...", ex2EN:"Let's whisper a Christmas word to put in the center, like...",
+      ex3IT:"Dove l'appendiamo? Qui in alto o lì in basso?", ex3EN:"Where should we hang it? Up here <br>or down there?"
+    },
+    {
+      nomeIT: "biberon",
+      nomeEN: "(baby) bottle",
+      image: "https://uploads3.fw360.it/uploads/env/4/9380/img/media/20_icona_avvento.png?1763127501",
+      midTitle: "LA TAVOLA DELLA FESTA",
+      midSubtitle: "The Festive Table",
+      midParagraph: "Disegnate o incollate il piatto che amate mangiare insieme durante le feste <br>e il vostro piatto preferito",
+      w1IT:"dolci", w1EN:"sweets",
+      w2IT:"caramelle", w2EN:"candy",
+      w3IT:"buono", w3EN:"yummy",
+      ex1IT:"Sfogliamo questa rivista per scegliere i dolci da ritagliare", ex1EN:"Let’s look through this magazine to choose the sweets to cut out",
+      ex2IT:"Io sono indecisa tra le caramelle e la focaccia", ex2EN:"I can’t decide between candy and the focaccia",
+      ex3IT:"Che buono, mi vien voglia di mangiare tutto", ex3EN:"So yummy, they make me want to eat everything"
+    },
+    {
+      nomeIT: "biberon",
+      nomeEN: "(baby) bottle",
+      image: "https://uploads3.fw360.it/uploads/env/4/9380/img/media/21_icona_avvento.png?1763127611",
+      midTitle: "DOVE SONO I REGALI?",
+      midSubtitle: "Where are the gifts?",
+      midParagraph: "Ritagliate e create piccoli pacchetti regalo e scrivete sopra, o intorno, cosa contengono: oggetti, parole gentili o pensieri speciali. Potete anche inserire la foto di ciò che c’è dentro, oppure scrivere per chi è il dono.",
+      w1IT:"regalo", w1EN:"gift",
+      w2IT:"biglietto con nome", w2EN:"name tag",
+      w3IT:"impacchettare", w3EN:"to wrap",
+      ex1IT:"Facciamo dei regalini? Cosa ci mettiamo dentro?", ex1EN:"Shall we make some little gifts? What should we put inside?",
+      ex2IT:"Aggiungiamo il fiocco e il bigliettino con il nome, questo è per papà", ex2EN:"Let’s add the bow and the name tag, this one is for Daddy",
+      ex3IT:"A me piace impacchettare i regali e a te scartarli, vero?", ex3EN:"I like wrapping the presents, and you like unwrapping them, right?"
+    },
+    {
+      nomeIT: "biberon",
+      nomeEN: "(baby) bottle",
+      image: "https://uploads3.fw360.it/uploads/env/4/9380/img/media/22_icona_avvento.png?1763127691",
+      midTitle: "IL BISCOTTO SPECIALE",
+      midSubtitle: "The Special Cookie",
+      midParagraph: "Create un biscotto con la pasta da modellare, il DAS, la carta crespa o ciò che preferite e poi  aggiungetelo alla moodboard. Potete decorarlo con bottoni, piccoli ritagli e altro ancora.",
+      w1IT:"finto", w1EN:"pretend",
+      w2IT:"strumento", w2EN:"tool",
+      w3IT:"decorare", w3EN:"to decorate",
+      ex1IT:"Facciamo un biscotto di Natale vero<br> o un biscotto finto?", ex1EN:"Shall we make a real Christmas cookie<br> or a pretend one?",
+      ex2IT:"Prendiamo tutti i nostri strumenti", ex2EN:"Let’s get all our tools ready",
+      ex3IT:"Come lo decoriamo? Con perline e bottoni?", ex3EN:"How should we decorate it? With beads and buttons?"
+    },
+    {
+      nomeIT: "biberon",
+      nomeEN: "(baby) bottle",
+      image: "https://uploads3.fw360.it/uploads/env/4/9380/img/media/23_icona_avvento.png?1763127789",
+      midTitle: "IL SOFFIO DEL VENTO",
+      midSubtitle: "The Winter Breeze",
+      midParagraph: "Simulate il soffio del vento con fili di cotone o carta azzurra. Mentre lo fate raccontate al bambino del suono del vento d'inverno che fa danzare la neve..",
+      w1IT:"vento", w1EN:"wind",
+      w2IT:"filo", w2EN:"thread",
+      w3IT:"soffiare", w3EN:"to blow",
+      ex1IT:"Oggi creiamo il vento d'inverno! Sei capace?", ex1EN:"Today we’re making winter wind! Do you think you can do it?",
+      ex2IT:"Mettiamo insieme tanti fili di cotone", ex2EN:"Let’s put lots of cotton threads together",
+      ex3IT:"Soffiaci sopra così sembra proprio il vento. Soffia forte", ex3EN:"Blow on them, it looks just like the wind. Blow really hard"
+    },
+    {
+      nomeIT: "biberon",
+      nomeEN: "(baby) bottle",
+      image: "https://uploads3.fw360.it/uploads/env/4/9380/img/media/24_icona_avvento.png?1763128088",
+      midTitle: "BRILLIO DELLA VIGILIA <br>DI NATALE",
+      midSubtitle: "Christmas Eve Sparkle",
+      midParagraph: "Aggiungete un tocco finale alla vostra moodboard: brillantini, luce o una parola che racchiuda tutto lo spirito del vostro Natale.",
+      w1IT:"staordinaria", w1EN:"extraordinary",
+      w2IT:"spargere", w2EN:"to sprinkle",
+      w3IT:"incorniciare", w3EN:"to frame",
+      ex1IT:"Cosa manca alla nostra bacheca perché sia straordinaria?", ex1EN:"What’s missing from our board to make it extraordinary?",
+      ex2IT:"Spargiamo tanti brillantini ovunque", ex2EN:"Let’s sprinkle lots of glitter everywhere",
+      ex3IT:"Come è bella, dobbiamo incorniciarla", ex3EN:"Look how pretty it is! We have to frame it"
+    },
+    {
+      nomeIT: "biberon",
+      nomeEN: "(baby) bottle",
+      image: "https://uploads3.fw360.it/uploads/env/4/9380/img/media/24-02_icona_avvento.png?1763128229",
+      midTitle: "BUON NATALE!",
+      midSubtitle: "Merry Christmas",
+      midParagraph: "La vostra moodboard di Natale in lingua è completa! Puoi aggiungere, ad esempio, un titolo come: “La nostra bacheca di Natale – Our Christmas Board” e poi incorniciarla. Puoi riutilizzarla ogni anno, aggiungendo nuove parole e ricordi, oppure crearne una nuova ogni Natale e conservarle tutte insieme. Diventerà così una bellissima tradizione di famiglia, da appendere e riguardare ogni anno per scoprire cosa è cambiato… e cosa è rimasto uguale.<br><br> TANTI AUGURI ☀",
+      w1IT:"desiderio", w1EN:"wish",
+      w2IT:"bigliettino", w2EN:"note",
+      w3IT:"incollare", w3EN:"to stick",
+      ex1IT:"Cosa manca alla nostra bacheca perché sia straordinaria?", ex1EN:"What’s missing from our board to make it extraordinary?",
+      ex2IT:"Spargiamo tanti brillantini ovunque", ex2EN:"Let’s sprinkle lots of glitter everywhere",
+      ex3IT:"Come è bella, dobbiamo incorniciarla", ex3EN:"Look how pretty it is! We have to frame it"
+    },
+    // ...aggiungi qui fino a 25 card
+  ];
+
+  /* alias per l'albero */
+  const DECK = cards;
+
+
+  /* ===== LOGHI ===== */
+  const LOGO_FRONT  = "https://uploads3.fw360.it/uploads/env/4/9380/img/media/logo-bianco-allegra-1.png?1763392405";  // logo bianco copertina (URL provvisorio)
+  const LOGO_BACK   = "https://uploads3.fw360.it/uploads/env/4/9380/img/logos/logo-allegralu-nopayoff.png?1741732739"; // logo standard
+  const LOGO_FALLBACK = 'data:image/svg+xml;utf8,'+encodeURIComponent(
+    `<?xml version="1.0" encoding="UTF-8"?>
+     <svg xmlns="http://www.w3.org/2000/svg" width="140" height="35" viewBox="0 0 280 70">
+       <rect width="280" height="70" fill="white"/>
+       <circle cx="35" cy="35" r="18" fill="#08B5BB"/>
+       <text x="70" y="45" font-family="Segoe UI, Arial, sans-serif" font-size="28" fill="#08B5BB">ab LAB</text>
+     </svg>`
+  );
+
+  /* ===== ELEMENTI/STATE FLASHCARD ===== */
+  let currentCard = 0, isBusy = false;
+  const TURN_MS = 800;
+
+  const modalEl     = document.getElementById('modal');
+  const cardEl      = document.getElementById("flashcard");
+  const mainImage   = document.getElementById("mainImage");
+  const flipBtn     = document.getElementById("flipBtn");
+  const btnPrev     = document.getElementById("btnPrev");
+  const btnNavNext  = document.getElementById("btnNavNext");
+  const container   = document.querySelector('.card-container');
+  const cardNumberFront = document.getElementById("cardNumberFront");
+  const cardNumberBack  = document.getElementById("cardNumberBack");
+
+  const backContent = document.getElementById("backContent");
+  const backInner   = document.getElementById("backInner");
+
+  const introSection = document.getElementById("introSection");
+  const introTitle   = document.getElementById("introTitle");
+  const introImage   = document.getElementById("introImage");
+  const introText    = document.getElementById("introText");
+  const btnShowWords = document.getElementById("btnShowWords");
+
+  const wordsSection   = document.getElementById("wordsSection");
+  const wordsTopTitle  = document.getElementById("wordsTopTitle");
+  const wordsImage     = document.getElementById("wordsImage");
+  const wordsList      = document.getElementById("wordsList");
+  const btnShowExamples= document.getElementById("btnShowExamples");
+
+// === DONO NASCOSTO – riferimenti popup ===
+const giftOverlay = document.getElementById('giftOverlay');
+const giftModal   = document.getElementById('giftModal');
+const giftClose   = document.getElementById('giftClose');
+
+  // === PRE-POPUP "Aspetta! Leggimi" ===
+const giftPrePopup   = document.getElementById('giftPrePopup');
+const giftPreReadBtn = document.getElementById('giftPreReadBtn');
+
+let giftTimer = null;
+let giftAlreadyShown = false;  // così non lo ripete mille volte
+
+function openGiftPrePopup(){
+  if (!giftPrePopup) return;
+  giftPrePopup.setAttribute('open', '');
+}
+
+function closeGiftPrePopup(){
+  if (!giftPrePopup) return;
+  giftPrePopup.removeAttribute('open');
+}
+
+// ⚠️ usiamo lo stesso meccanismo del popup originale: attributo "open"
+function openGiftPopup(){
+  if (!giftOverlay) return;
+  giftOverlay.setAttribute('open', '');
+  giftAlreadyShown = true;
+}
+
+function closeGiftPopup(){
+  if (!giftOverlay) return;
+  giftOverlay.removeAttribute('open');
+}
+
+// wiring pulsanti / click fuori
+if (giftPrePopup && giftPreReadBtn){
+  giftPreReadBtn.addEventListener('click', () => {
+    closeGiftPrePopup();
+    // usa la funzione ORIGINALE del Dono Nascosto
+    if (typeof openGiftModal === 'function') {
+      openGiftModal();
+    }
+  });
+
+  giftPrePopup.addEventListener('click', (e) => {
+    if (e.target === giftPrePopup) {
+      closeGiftPrePopup();
+    }
+  });
+}
+
+
+// chiusura del dono nascosto con la X (se non l'hai già altrove)
+if (giftClose){
+  giftClose.addEventListener('click', closeGiftPopup);
+}
+
+// chiudi cliccando sull’overlay scuro (opzionale)
+if (giftOverlay){
+  giftOverlay.addEventListener('click', (e) => {
+    if (e.target === giftOverlay) {
+      closeGiftPopup();
+    }
+  });
+}
+
+
+function closeGiftPrePopup(){
+  if (!giftPrePopup) return;
+  giftPrePopup.removeAttribute('open');
+}
+
+// usa l'overlay esistente del dono nascosto
+function openGiftPopup(){
+  if (!giftOverlay) return;
+  giftOverlay.style.display = 'flex';   // lo mostriamo
+  giftAlreadyShown = true;
+}
+
+function closeGiftPopup(){
+  if (!giftOverlay) return;
+  giftOverlay.style.display = 'none';   // lo nascondiamo
+}
+
+// wiring pulsanti / click fuori
+if (giftPrePopup && giftPreReadBtn){
+  giftPreReadBtn.addEventListener('click', () => {
+    closeGiftPrePopup();
+    openGiftPopup();
+  });
+
+  giftPrePopup.addEventListener('click', (e) => {
+    if (e.target === giftPrePopup) {
+      closeGiftPrePopup();
+    }
+  });
+}
+
+// chiusura del dono nascosto con la X (se non l'hai già fatto altrove)
+if (giftClose){
+  giftClose.addEventListener('click', closeGiftPopup);
+}
+
+// chiudi anche cliccando sull’overlay scuro (opzionale)
+if (giftOverlay){
+  giftOverlay.addEventListener('click', (e) => {
+    if (e.target === giftOverlay) {
+      closeGiftPopup();
+    }
+  });
+}
+
+
+  const w1IT = document.getElementById("w1IT");
+  const w1EN = document.getElementById("w1EN");
+  const w2IT = document.getElementById("w2IT");
+  const w2EN = document.getElementById("w2EN");
+  const w3IT = document.getElementById("w3IT");
+  const w3EN = document.getElementById("w3EN");
+
+  const examples  = document.getElementById("examples");
+  const ex1IT     = document.getElementById("ex1IT");
+  const ex1EN     = document.getElementById("ex1EN");
+  const ex2IT     = document.getElementById("ex2IT");
+  const ex2EN     = document.getElementById("ex2EN");
+  const ex3IT     = document.getElementById("ex3IT");
+  const ex3EN     = document.getElementById("ex3EN");
+
+  const btnBackStep = document.getElementById("btnBackStep");
+
+  const topLogo   = document.getElementById("topLogo");
+  const frontLogo = document.getElementById("frontLogo");
+
+  const tree        = document.getElementById('tree');
+  const dayPopup    = document.getElementById('dayPopup');
+  const dayCard     = document.getElementById('dayCard');
+  const btnUnlockAll= document.getElementById("btnUnlockAll");
+  const btnRelock   = document.getElementById("btnRelock");
+  const btnTestDay  = document.getElementById("btnTestDay");
+  let forceUnlockAll = false;
+
+  /* ===== Utils logo / layout ===== */
+  function safeSetLogo(img, primarySrc){
+    if (!img) return;
+    img.onerror = () => { img.onerror = null; img.src = LOGO_FALLBACK; reserveTopSpace(); };
+    img.onload  = reserveTopSpace;
+    img.src = primarySrc;
+  }
+
+  function reserveTopSpace(){
+  if (!topLogo) return;
+
+  const h = Math.max(topLogo.getBoundingClientRect().height || 35, 35);
+
+  // mobile vs desktop
+  const isMobile = window.matchMedia('(max-width: 767px)').matches;
+
+  const minPad = isMobile ? 56 : 60;          // minimo padding
+  const maxPad = isMobile ? 80 : 90;          // massimo padding
+  const extra  = isMobile ? 16 : 20;          // offset di sicurezza
+
+  const pad = Math.min(
+    maxPad,
+    Math.max(minPad, Math.ceil(h + extra))
+  );
+
+  document.querySelectorAll('.card-face')
+    .forEach(el => el.style.paddingTop = pad + 'px');
+}
+
+  window.addEventListener('resize', reserveTopSpace);
+
+  let fitRaf = null;
+      function fitBackContent(){
+    if(!backInner || !backContent) return;
+
+    // reset modalità
+    backContent.classList.remove('dense','extra-dense');
+    backContent.style.overflowY = 'hidden';
+
+    // prendiamo l'altezza reale della faccia posteriore della card
+    const backFace = document.querySelector('.card-face.back');
+    if (!backFace) return;
+
+    const cardHeight = backFace.clientHeight || backFace.getBoundingClientRect().height;
+
+    // spazio “utile” per il contenuto:
+    // togliamo ~100px per logo in alto, numeretto in basso e margini
+    const available = cardHeight - 100;
+
+    // quanto spazio chiede davvero il contenuto interno
+    let needed = backInner.scrollHeight + 6; // piccolo margine di sicurezza
+
+    // se già ci sta, non facciamo nulla
+    if (needed <= available) return;
+
+    // 1° step: modalità densa
+    backContent.classList.add('dense');
+    needed = backInner.scrollHeight + 6;
+    if (needed <= available) return;
+
+    // 2° step: modalità extra-densa
+    backContent.classList.add('extra-dense');
+    needed = backInner.scrollHeight + 6;
+
+    // se ancora non basta, attiviamo lo scroll verticale interno
+    if (needed > available){
+      backContent.style.overflowY = 'auto';
+    }
+  }
+
+
+  function queueFit(){
+    if (fitRaf) cancelAnimationFrame(fitRaf);
+    fitRaf = requestAnimationFrame(()=> requestAnimationFrame(fitBackContent));
+  }
+
+  function autoResizeTitle(el, maxPx, minPx){
+    if (!el) return;
+
+    // punto di partenza
+    el.style.fontSize = maxPx + 'px';
+
+    let current = maxPx;
+    let safety  = 0;
+
+    // se il contenuto "spinge" troppo in altezza, stringiamo il font
+    while (
+      current > minPx &&
+      safety < 20 &&                      // sicurezza per evitare loop infiniti
+      el.scrollHeight > el.offsetHeight + 2
+    ){
+      current -= 1;
+      el.style.fontSize = current + 'px';
+      safety++;
+    }
+  }
+
+  /* ===== APPLY CARD DATA (4 FASI) ===== */
+  function applyCardData(c){
+    // copertina: logo bianco, interno: logo standard
+    safeSetLogo(frontLogo, LOGO_FRONT);
+    safeSetLogo(topLogo,   LOGO_BACK);
+
+    // immagine principale
+    mainImage.src = c.image || "";
+
+    // fase 2
+    const mt  = c.midTitle    || "TITOLO DEL GIORNO";
+    const ms  = c.midSubtitle || "Subtitle in English";
+    const mp  = c.midParagraph|| "Testo descrittivo da personalizzare per questa card.";
+
+    introTitle.innerHTML = mt + '<span>' + ms + '</span>';
+    introImage.src = c.image || "";
+    introText.innerHTML = mp;
+
+    // fase 3 – parole utili
+    wordsTopTitle.innerHTML = introTitle.innerHTML;
+    wordsImage.src = c.image || "";
+
+    w1IT.innerHTML = c.w1IT || "";
+    w1EN.innerHTML = c.w1EN || "";
+    w2IT.innerHTML = c.w2IT || "";
+    w2EN.innerHTML = c.w2EN || "";
+    w3IT.innerHTML = c.w3IT || "";
+    w3EN.innerHTML = c.w3EN || "";
+
+    // fase 4 – esempi
+    ex1IT.innerHTML = c.ex1IT || "";
+    ex1EN.innerHTML = c.ex1EN || "";
+    ex2IT.innerHTML = c.ex2IT || "";
+    ex2EN.innerHTML = c.ex2EN || "";
+    ex3IT.innerHTML = c.ex3IT || "";
+    ex3EN.innerHTML = c.ex3EN || "";
+
+        // auto-resize dei titoli (fase 2 e fase 3)
+    setTimeout(() => {
+      autoResizeTitle(introTitle,   20, 14); // titolo fase 2
+      autoResizeTitle(wordsTopTitle,20, 14); // titolo fase 3
+      queueFit();                            // ricalcola layout denso/scroll
+    }, 30);
+
+    // reset fasi
+    introSection.style.display   = 'flex';
+    wordsSection.style.display   = 'none';
+    wordsList.style.display      = 'flex';
+    btnShowExamples.style.display= 'inline-block';
+    examples.style.display       = 'none';
+    btnBackStep.style.display    = 'none';
+  }
+function applyFinalCardRules() {
+  if (currentCard === 24) {
+
+    // Mostra solo la fase 2
+    introSection.style.display = 'flex';
+
+    // Nasconde completamente le altre fasi
+    wordsSection.style.display = 'none';
+    wordsList.style.display = 'none';
+    btnShowWords.style.display = 'none';
+    btnShowExamples.style.display = 'none';
+    examples.style.display = 'none';
+
+    // La card è già "girata" sul retro (fase 2)
+    cardEl.classList.add("flipped");
+
+    // Manteniamo il bottone sotto la card
+    btnBackStep.style.display = 'inline-block';
+
+    // Adatta layout
+    queueFit();
+  }
+}
+
+
+  function updateCard(){
+    const c = cards[currentCard];
+    applyCardData(c);
+
+    cardNumberFront.textContent = String(currentCard + 1);
+    cardNumberBack.textContent  = `${currentCard+1} / ${cards.length}`;
+
+    cardEl.classList.remove('flipped','advance');
+    reserveTopSpace();
+    queueFit();
+  }
+
+  /* ===== FLIP (fase 1 -> fase 2) ===== */
+  function flipCard() {
+    if (isBusy) return;
+    if (cardEl.classList.contains("flipped")) return;
+    cardEl.classList.add("flipped");
+    // fase 2 già attiva di default da applyCardData
+    btnBackStep.style.display = 'inline-block';
+    queueFit();
+    applyFinalCardRules();
+  }
+
+  flipBtn.addEventListener("click", flipCard);
+  const frontFace = document.querySelector(".card-face.front");
+  document.getElementById("frontFlipBtn").addEventListener("click", flipCard);
+
+
+/* ===== FASE 2 -> FASE 3 (parole utili) ===== */
+btnShowWords.addEventListener("click", () => {
+  introSection.style.display = 'none';
+  wordsSection.style.display = 'flex';
+  wordsList.style.display = 'flex';
+  btnShowExamples.style.display = 'inline-block';
+  examples.style.display = 'none';
+  btnBackStep.style.display = 'inline-block';
+  queueFit();
+
+  // Se siamo sulla card 24 (indice 23) mostra il popup "Dono nascosto"
+  if (currentCard === 23){   // 0-based: 0=giorno1 ... 23=giorno24
+    //openGiftModal();
+  }
+});
+
+
+ btnShowExamples.addEventListener("click", () => {
+  // vai in FASE 4 come prima
+  wordsList.style.display       = 'none';
+  btnShowExamples.style.display = 'none';
+  examples.style.display        = 'flex';
+  btnBackStep.style.display     = 'inline-block';
+  queueFit();
+
+  // pulizia timer se già esiste
+  if (giftTimer) {
+    clearTimeout(giftTimer);
+    giftTimer = null;
+  }
+
+  // SOLO card 24 (indice 23) e solo la prima volta
+  if (currentCard === 23 && !giftAlreadyShown) {
+    giftTimer = setTimeout(() => {
+      openGiftPrePopup();   // mostra "Aspetta! mamma e papà"
+    }, 5000);               // dopo ~5 secondi
+  }
+});
+
+
+  /* 🔙 Bottone “Torna indietro” */
+  btnBackStep.addEventListener("click", () => {
+    if (examples.style.display === 'flex') {
+      // fase 4 -> fase 3
+      examples.style.display       = 'none';
+      wordsList.style.display      = 'flex';
+      btnShowExamples.style.display= 'inline-block';
+      queueFit();
+    } else if (wordsSection.style.display === 'flex') {
+      // fase 3 -> fase 2
+      wordsSection.style.display   = 'none';
+      introSection.style.display   = 'flex';
+      queueFit();
+    } else {
+      // fase 2 -> copertina
+      cardEl.classList.remove('flipped');
+      btnBackStep.style.display = 'none';
+    }
+  });
+
+  // ===== DONO NASCOSTO – logica popup =====
+function openGiftModal(){
+  if (!giftOverlay || !giftModal) return;
+  giftOverlay.classList.add('is-visible');
+  giftOverlay.setAttribute('aria-hidden','false');
+}
+
+function closeGiftModal(){
+  if (!giftOverlay || !giftModal) return;
+  giftOverlay.classList.remove('is-visible');
+  giftOverlay.setAttribute('aria-hidden','true');
+}
+
+// X di chiusura
+if (giftClose){
+  giftClose.addEventListener('click', closeGiftModal);
+}
+
+// click fuori dal box
+if (giftOverlay){
+  giftOverlay.addEventListener('click', (e) => {
+    if (e.target === giftOverlay){
+      closeGiftModal();
+    }
+  });
+}
+
+// ESC per chiudere
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape'){
+    closeGiftModal();
+  }
+});
+
+  
+  
+  /* ===== NAVIGAZIONE CARD (page turn) ===== */
+  function navigateToIndex(targetIndex){
+    if (isBusy) return;
+    isBusy = true;
+    const finalIndex = (targetIndex + cards.length) % cards.length;
+
+    const delta  = (finalIndex - currentCard + cards.length) % cards.length;
+    const isNext = (delta === 1) || (currentCard === cards.length - 1 && finalIndex === 0);
+
+    const visibleFace = cardEl.classList.contains('flipped')
+      ? document.querySelector('.back')
+      : document.querySelector('.front');
+
+    const turner = document.createElement('div');
+    turner.className = 'page-turner ' + (isNext ? 'dir-next' : 'dir-prev');
+    const clone = visibleFace.cloneNode(true);
+    clone.querySelectorAll('[id]').forEach(el => el.removeAttribute('id'));
+    turner.appendChild(clone);
+    container.appendChild(turner);
+
+    const c = cards[finalIndex];
+    applyCardData(c);
+
+    cardNumberFront.textContent = String(finalIndex + 1);
+    cardNumberBack.textContent  = `${finalIndex+1} / ${cards.length}`;
+    cardEl.classList.remove('flipped','advance');
+
+    reserveTopSpace();
+    queueFit();
+
+    const cleanup = () => {
+  if (turner && turner.parentNode) turner.parentNode.removeChild(turner);
+  currentCard = finalIndex;
+  isBusy = false;
+
+  // 🧹 se cambio card, stoppo timer e chiudo il pre-popup
+  if (giftTimer){
+    clearTimeout(giftTimer);
+    giftTimer = null;
+  }
+  closeGiftPrePopup();
+};
+
+    turner.addEventListener('animationend', cleanup, { once:true });
+    setTimeout(cleanup, TURN_MS + 120);
+  }
+
+  btnNavNext.addEventListener("click",() => navigateToIndex(currentCard + 1));
+  btnPrev.addEventListener("click",   () => navigateToIndex(currentCard - 1));
+
+  document.addEventListener('keydown',(e)=>{
+    if(!modalEl.hasAttribute('open')) return;
+    if(e.key==='ArrowRight') navigateToIndex(currentCard+1);
+    if(e.key==='ArrowLeft')  navigateToIndex(currentCard-1);
+  });
+
+  /* ===== SWIPE MOBILE (CAMBIA CARTA) ===== */
+  const swipeArea = document.getElementById('allegra-card');
+  let startX = 0;
+  let startY = 0;
+  let startTarget = null;
+  const SWIPE_THRESHOLD = 40;
+  const MAX_VERTICAL_DRIFT = 60;
+
+  if (swipeArea){
+    swipeArea.addEventListener('touchstart', handleTouchStart, { passive: true });
+    swipeArea.addEventListener('touchend',   handleTouchEnd,   { passive: true });
+  }
+
+  function handleTouchStart(e){
+    if (!e.touches || e.touches.length > 1) return;
+
+    const t = e.touches[0];
+    startX = t.clientX;
+    startY = t.clientY;
+    startTarget = t.target;
+
+    if (startTarget.closest('button')){
+      startTarget = null;
+    }
+  }
+  function handleTouchEnd(e){
+    if (!startTarget) return;
+    if (!e.changedTouches || e.changedTouches.length === 0) return;
+
+    const t = e.changedTouches[0];
+    const dx = t.clientX - startX;
+    const dy = t.clientY - startY;
+
+    const absDx = Math.abs(dx);
+    const absDy = Math.abs(dy);
+
+    if (absDx < SWIPE_THRESHOLD || absDy > MAX_VERTICAL_DRIFT){
+      startTarget = null;
+      return;
+    }
+    if (dx < 0) navigateToIndex(currentCard + 1);
+    else        navigateToIndex(currentCard - 1);
+    startTarget = null;
+  }
+
+  /* ===== MODAL OPEN/CLOSE collegato all'albero ===== */
+  function openModalAt(idx){
+    currentCard = (idx + cards.length) % cards.length;
+    updateCard();
+    cardEl.classList.remove('flipped');
+    btnBackStep.style.display = 'none';
+
+    modalEl.setAttribute('open','');
+    document.body.style.overflow='hidden';
+  /* 🔔 AUDIO ALL’APERTURA */
+  const audio = document.getElementById('jingleAudio');
+  if(audio){
+      audio.currentTime = 0;
+      audio.volume = 0.4; // volume consigliato
+      audio.play().catch(()=>{});
+  }
+}
+
+  function closeModalFn(){
+  modalEl.removeAttribute('open');
+  document.body.style.overflow = '';
+  cardEl.classList.remove('flipped');
+  btnBackStep.style.display = 'none';
+
+  // 🧹 pulizia dono
+  if (giftTimer){
+    clearTimeout(giftTimer);
+    giftTimer = null;
+  }
+  closeGiftPrePopup();
+  closeGiftPopup();
+}
+
+
+  document.getElementById('closeModal').addEventListener('click', closeModalFn);
+  document.addEventListener('keydown', (e)=>{
+    if(!modalEl.hasAttribute('open')) return;
+    if(e.key === 'Escape') closeModalFn();
+  });
+
+  /* ===== CALENDARIO SBLOCCO ALBERO ===== */
+/* ===== CALENDARIO SBLOCCO ALBERO ===== */
+
+/* quante palline devono essere sbloccate oggi (1-25) */
+function unlockedCountToday(){
+  const now   = new Date();
+  const y     = now.getFullYear();
+  const start = new Date(y, 11, 1);   // 1 dicembre
+  const end   = new Date(y, 11, 25);  // 25 dicembre
+
+  if (forceUnlockAll) return DECK.length;
+  if (now > end) return DECK.length;
+  if (now < start) return 0;
+
+  return Math.min(now.getDate(), 25);
+}
+
+/* una card (indice 0-24) è sbloccata se il suo giorno è arrivato */
+function isUnlockedIndex(cardIndex){
+  return (cardIndex + 1) <= unlockedCountToday();
+}
+
+/* crea UNA pallina partendo dall'indice della card (0-24) */
+function createOrnament(cardIndex){
+  const url = DECK[cardIndex].image;
+  const n   = cardIndex + 1;
+
+  const o = document.createElement('button');
+  o.className = 'ornament';
+  o.type = 'button';
+  o.dataset.cardIndex = String(cardIndex);  // 👈 indice reale della card
+
+  o.setAttribute('aria-label', `Apri ${DECK[cardIndex].nomeIT || 'pallina'}`);
+  o.style.setProperty('background-image', `url("${url}")`, 'important');
+  o.innerHTML = '<span class="clip" aria-hidden="true"></span>';
+
+  const b = document.createElement('span');
+  b.className = 'badge';
+  b.textContent = n;
+  o.appendChild(b);
+
+  // stato iniziale bloccata / sbloccata
+  if (!isUnlockedIndex(cardIndex)){
+    o.classList.add('locked');
+    o.setAttribute('aria-disabled','true');
+    o.title = `Disponibile il ${n} dicembre`;
+  }
+
+  o.addEventListener('click', () => {
+    if (o.classList.contains('locked')) return;
+
+    o.classList.add('pop','glow');
+    setTimeout(() => o.classList.remove('pop'), 220);
+    setTimeout(() => o.classList.remove('glow'), 520);
+
+    openModalAt(cardIndex);     // apre la card corretta
+  });
+
+  return o;
+}
+
+/* ordine casuale ma STABILE per utente, con la 25 sempre in cima */
+function getRandomOrder(){
+  const key = 'ablab-advent-order-2025';
+  try{
+    const stored = localStorage.getItem(key);
+    if (stored){
+      const parsed = JSON.parse(stored);
+      if (Array.isArray(parsed) && parsed.length === DECK.length){
+        return parsed;
+      }
+    }
+  }catch(e){ /* ignore */ }
+
+  // 0..24
+  const all = Array.from({length: DECK.length}, (_, i) => i);
+
+  // card 24 (25 dicembre) va sempre in cima
+  const fixedIndex = 24;
+  all.splice(fixedIndex, 1);   // rimuovi la 25 dall'array
+
+  // Fisher–Yates
+  for (let i = all.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    [all[i], all[j]] = [all[j], all[i]];
+  }
+
+  const order = [fixedIndex, ...all];
+
+  try{
+    localStorage.setItem(key, JSON.stringify(order));
+  }catch(e){ /* ignore */ }
+
+  return order;
+}
+
+/* costruisce l'albero con il layout speciale e ordine random */
+function buildTree(){
+  // pulisci eventuali righe precedenti
+  [...tree.querySelectorAll('.tree-row')].forEach(r => r.remove());
+
+  const order = getRandomOrder();
+  const rowsPlan = [1, 2, 4, 5, 6, 7];   // 1 + 2 + 4 + 5 + 6 + 7 = 25
+  let pointer = 0;
+
+  rowsPlan.forEach(cols => {
+    const row = document.createElement('div');
+    row.className = 'tree-row';
+
+    for (let c = 0; c < cols && pointer < order.length; c++, pointer++){
+      const cardIndex = order[pointer];     // indice REALE della card
+      row.appendChild(createOrnament(cardIndex));
+    }
+
+    const trunkEl = tree.querySelector('.trunk');
+    if (trunkEl){
+      tree.insertBefore(row, trunkEl);
+    } else {
+      tree.appendChild(row);
+    }
+  });
+}
+
+/* aggiorna lock / unlock e evidenzia la pallina del giorno usando data-card-index */
+function refreshLockState(){
+  const openCount = unlockedCountToday();
+  const lastIndex = openCount - 1;   // indice card del giorno corrente (0-24)
+
+  document.querySelectorAll('.ornament').forEach(o => {
+    const cardIndex = parseInt(o.dataset.cardIndex, 10);
+
+    o.classList.toggle('is-today', cardIndex === lastIndex);
+
+    if (isUnlockedIndex(cardIndex)){
+      o.classList.remove('locked');
+      o.removeAttribute('aria-disabled');
+      o.title = '';
+    } else {
+      o.classList.add('locked');
+      o.setAttribute('aria-disabled', 'true');
+      o.title = `Disponibile il ${cardIndex + 1} dicembre`;
+    }
+  });
+}
+
+/* flusso “Oggi è il X dicembre” + apertura automatica della card corretta */
+function playDayFlow(dayNum, {respectStorage = false} = {}){
+  dayNum = Math.max(1, Math.min(25, dayNum || 1));
+
+  if (respectStorage){
+    const now = new Date();
+    const key = `adventShown-${now.getFullYear()}-${now.getMonth()+1}-${now.getDate()}`;
+    if (localStorage.getItem(key) === '1') return;
+    localStorage.setItem(key,'1');
+  }
+
+dayCard.textContent = "Oggi \u00E8 il " + dayNum + " dicembre \u{1F384}";
+  dayPopup.setAttribute('open','');
+
+  setTimeout(() => {
+    dayPopup.removeAttribute('open');
+
+    const idx = dayNum - 1; // indice card 0-24
+    const orb = document.querySelector(`.ornament[data-card-index="${idx}"]`);
+    if (!orb) return;
+
+    orb.scrollIntoView({behavior:'smooth', block:'center', inline:'center'});
+    orb.classList.add('tremble','glow');
+    setTimeout(() => orb.classList.remove('glow'), 520);
+
+    setTimeout(() => {
+      if (!orb.classList.contains('locked')){
+        openModalAt(idx);          // apre la card del giorno
+      } else {
+        orb.classList.add('pop');
+        setTimeout(() => orb.classList.remove('pop'), 220);
+      }
+    }, 650);
+  }, 2000);
+}
+
+/* pulsanti debug */
+btnUnlockAll.addEventListener('click', () => {
+  forceUnlockAll = true;
+  refreshLockState();
+});
+btnRelock.addEventListener('click', () => {
+  forceUnlockAll = false;
+  refreshLockState();
+});
+btnTestDay.addEventListener('click', () => {
+  const d = unlockedCountToday() || 1;
+  playDayFlow(d, {respectStorage:false});
+});
+
+/* auto-popup del giorno una sola volta al giorno */
+(function dayAutoFlow(){
+  if (forceUnlockAll) return;
+  const openCount = unlockedCountToday();
+  if (openCount < 1 || openCount > 25) return;
+  playDayFlow(openCount, {respectStorage:true});
+})();
+
+/* refresh automatico a mezzanotte */
+(function scheduleMidnightRefresh(){
+  const now = new Date();
+  const t = new Date(now.getFullYear(), now.getMonth(), now.getDate()+1, 0,0,1) - now;
+  setTimeout(() => {
+    refreshLockState();
+    scheduleMidnightRefresh();
+  }, t);
+})();
+
+/* start */
+updateCard();
+buildTree();
+refreshLockState();
+
+</script>
+</body>
+</html>
