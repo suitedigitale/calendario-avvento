@@ -1138,8 +1138,8 @@ html, body{
                 <img id="wordsImage" class="intro-image" src="" alt="Icona parole utili" />
 
                 <div class="words-head">
-                  FRASI UTILI
-                  <span>useful sentences</span>
+                  LASCIATI ISPIRARE
+                  <span>Get inspired</span>
                 </div>
 
                 <div class="words-list" id="wordsList">
@@ -1218,7 +1218,7 @@ html, body{
 </div>
 
 <script>
-  /* ===== DATA FLASHCARD – struttura nuova (esempio) ===== */
+   /* ===== DATA FLASHCARD – struttura nuova (esempio) ===== */
   const cards = [
     {
       nomeIT: "bavaglino",
@@ -1417,9 +1417,9 @@ html, body{
       w1IT:"annusare", w1EN:"sniff",
       w2IT:"speziato", w2EN:"spicy",
       w3IT:"asprigno", w3EN:"tangy",
-      ex1IT:"Senti l'odore del pan di zenzero, degli aghi di pino...", ex1EN:"Let’s smell the gingerbread, the pine needles...",
-      ex2IT:"Annusa... Ti piace? Che buon profumo", ex2EN:"Take a sniff... Do you like it? What a lovely smell",
-      ex3IT:"La buccia del mandarino è asprigna e la cannella è speziata", ex3EN:"The mandarin peel is tangy and the cinnamon is spicy"
+      ex1IT:"Senti l'odore del pan di zenzero, degli aghi di pino...", ex1EN:"Let’s smell the gingerbread,<br> the pine needles...",
+      ex2IT:"Annusa... Ti piace? Che buon profumo", ex2EN:"Take a sniff... Do you like it?<br> What a lovely smell",
+      ex3IT:"La buccia del mandarino è asprigna e la cannella è speziata", ex3EN:"The mandarin peel is tangy <br>and the cinnamon is spicy"
     },
     {
       nomeIT: "biberon",
@@ -1431,8 +1431,8 @@ html, body{
       w1IT:"baffi", w1EN:"whiskers",
       w2IT:"pelo", w2EN:"fur",
       w3IT:"accarezzare", w3EN:"to stroke",
-      ex1IT:"Che animali aggiungiamo alla nostra bacheca?", ex1EN:"What animal should we put on our board?",
-      ex2IT:"Facciamo il muso, poi le zampine, i baffi e il pelo", ex2EN:"Let’s make the face, then the paws, the whiskers, and the fur",
+      ex1IT:"Che animali aggiungiamo <br>alla nostra bacheca?", ex1EN:"What animal should we put on our board?",
+      ex2IT:"Facciamo il muso, poi le zampine,<br> i baffi e il pelo", ex2EN:"Let’s make the face, then the paws,<br> the whiskers, and the fur",
       ex3IT:"Fai le carezzine al cane", ex3EN:"Stroke the dog nicely"
     },
     {
@@ -1459,8 +1459,8 @@ html, body{
       w1IT:"sbirciare", w1EN:"to peek",
       w2IT:"fiocco di neve", w2EN:"snowflake",
       w3IT:"incollare", w3EN:"to glue",
-      ex1IT:"Costruiamo una finestra per sbirciare la neve che scende", ex1EN:"We’re making a window to peek at the falling snow",
-      ex2IT:"Prendiamo: forbici, carta bianca e blu e un po' di cotone per la neve", ex2EN:"Let's get: scissors, white and blue paper, and some cotton for the snow",
+      ex1IT:"Costruiamo una finestra per sbirciare<br> la neve che scende", ex1EN:"We’re making a window to peek <br>at the falling snow",
+      ex2IT:"Prendiamo: forbici, carta bianca e blu <br>e un po' di cotone per la neve", ex2EN:"Let's get: scissors, white and blue paper, and some cotton for the snow",
       ex3IT:"Incolliamo i fiocchi di neve sul foglio blu e poi aggiungiamo la finestrella", ex3EN:"Let’s glue the snowflakes onto the blue paper, and then add the window"
     },
     {
@@ -1501,9 +1501,9 @@ html, body{
       w1IT:"dolci", w1EN:"sweets",
       w2IT:"caramelle", w2EN:"candy",
       w3IT:"buono", w3EN:"yummy",
-      ex1IT:"Sfogliamo questa rivista per scegliere i dolci da ritagliare", ex1EN:"Let’s look through this magazine to choose the sweets to cut out",
+      ex1IT:"Sfogliamo questa rivista per scegliere<br> i dolci da ritagliare", ex1EN:"Let’s look through this magazine to choose the sweets to cut out",
       ex2IT:"Io sono indecisa tra le caramelle e la focaccia", ex2EN:"I can’t decide between candy and the focaccia",
-      ex3IT:"Che buono, mi vien voglia di mangiare tutto", ex3EN:"So yummy, they make me want to eat everything"
+      ex3IT:"Che buono, mi vien voglia di mangiare tutto", ex3EN:"So yummy, they make me want<br> to eat everything"
     },
     {
       nomeIT: "biberon",
@@ -1515,9 +1515,9 @@ html, body{
       w1IT:"regalo", w1EN:"gift",
       w2IT:"biglietto con nome", w2EN:"name tag",
       w3IT:"impacchettare", w3EN:"to wrap",
-      ex1IT:"Facciamo dei regalini? Cosa ci mettiamo dentro?", ex1EN:"Shall we make some little gifts? What should we put inside?",
-      ex2IT:"Aggiungiamo il fiocco e il bigliettino con il nome, questo è per papà", ex2EN:"Let’s add the bow and the name tag, this one is for Daddy",
-      ex3IT:"A me piace impacchettare i regali e a te scartarli, vero?", ex3EN:"I like wrapping the presents, and you like unwrapping them, right?"
+      ex1IT:"Facciamo dei regalini?<br> Cosa ci mettiamo dentro?", ex1EN:"Shall we make some little gifts?<br> What should we put inside?",
+      ex2IT:"Aggiungiamo il fiocco e il bigliettino<br> con il nome, questo è per papà", ex2EN:"Let’s add the bow and the name tag,<br> this one is for Daddy",
+      ex3IT:"A me piace impacchettare i regali<br> e a te scartarli, vero?", ex3EN:"I like wrapping the presents, and you like unwrapping them, right?"
     },
     {
       nomeIT: "biberon",
@@ -1998,11 +1998,12 @@ btnShowWords.addEventListener("click", () => {
   }
 
   // SOLO card 24 (indice 23) e solo la prima volta
-  if (currentCard === 23 && !giftAlreadyShown) {
+ if (currentCard === 23) {
     giftTimer = setTimeout(() => {
-      openGiftPrePopup();   // mostra "Aspetta! mamma e papà"
-    }, 5000);               // dopo ~5 secondi
-  }
+      openGiftPrePopup();
+    }, 3000);  // o il valore che hai scelto
+}
+
 });
 
 
